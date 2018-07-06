@@ -27,14 +27,17 @@ eval {
         numprocs=>$n_procs,
         template_job=>$template_job,
         node=>$node);
+    print "Submitting test job requesting $n_procs cores and a walltime of $wall hours...\n";
 
     sleep(10);
 
-    ($job_found) = findJob("$QCHASM/test/0007");
+    ($job_found) = findJob("$ENV{PWD}");
 
-    killJob($job_found) if $job_found;
-    sleep(5);
-
+    if($job_found) {
+      print "Killing job $job_found...\n";
+      killJob($job_found);
+      sleep(5);
+    }
     $failed_to_kill = findJob("$QCHASM/test/0007");
     1
 } or do {
@@ -45,20 +48,19 @@ eval {
 
 
 if ($failed_to_submit) {
-    die "Test failed. Failed to submit test job to the queue.  Check test.job for errors.\n"
+    die "Test failed. Failed to submit test job to the queue.\nCheck test.job in this directory for errors and revise $QCHASM/AaronTools/template.job accordingly.\n"
 }
 
 unless ($job_found) {
-    die "Test Failed. Cannot find job submitted to the queue. Please find the job and kill manually. Contact developers to debug findjob.\n";
+    die "Test Failed. Cannot find job submitted to the queue. Please find the job and kill manually. Contact catalysttrends\@uga.edu to debug findjob.\n";
 }
 
 if ($failed_to_kill) {
-    die "Test Failed. Cannot kill a job on the queue. Please kill the job manually.\n";
+    die "Test Failed. Cannot kill a job on the queue. Please kill the job manually. Contact catalysttrends\@uga.edu for assistance.\n";
 }
 
-print "Test passed!\n";
-#Leave behind .job and .log file unless test passed!
-system("rm -fr test.job*");
+print "Test passed!\nHowever, you should check test.job in this directory to make sure the number of cores and walltime matches the above and that the memory is correct.\n";
+#Leave behind .job file to be checked manually
 system("rm -fr test.log");
 
 

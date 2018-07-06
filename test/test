@@ -5,6 +5,10 @@
 use strict; use warnings;
 use Cwd qw(cwd);
 
+if(!defined($ENV{'QCHASM'})) {
+  die "Need to set environmental variable QCHASM!\n\nSee https://github.com/QChASM/Aaron/wiki/Getting-Started-with-AARON-and-AaronTools\n\n";
+}
+
 my $QCHASM = $ENV{'QCHASM'};
 
 my $TESTDIR = "$QCHASM/AaronTools/test";
