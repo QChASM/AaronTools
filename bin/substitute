@@ -71,7 +71,7 @@ pod2usage( {
           "Please provide at least one target atom and substituent pair",
         -exitval => 1,
         -verbose => 1
-    } ) unless ( %sublist > 0 );
+    } ) unless ( keys(%sublist) > 0 );
 pod2usage( {
         -message => "Please provide a geometry file",
         -exitval => 1,

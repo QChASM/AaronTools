@@ -34,16 +34,23 @@ sub grab_coords {
         if($line =~ / orientation:/) {
           @coords = ();
           @atoms = ();
+		  @flags = ();
           $line = <INFILE>;
           $line = <INFILE>;
           $line = <INFILE>;
           $line = <INFILE>;
           $line = <INFILE>;
           do {
-            if($line =~ /^\s+\d+\s+(\S+)\s+\S*\s+(\S+)\s+(\S+)\s+(\S+)/) {
-              my $coord = [$2, $3, $4];
+			# centernumber atomicnumber atomictypes coordinates
+            if($line =~ /^\s+\d+\s+(\S+)\s+(\S*)\s+(\S+)\s+(\S+)\s+(\S+)/) {
+              my $coord = [$3, $4, $5];
               push(@coords, $coord);
               push(@atoms, $elements->[$1]);
+			  if ($2){
+				  push(@flags, $2);
+			  }else{
+				push(@flags, 0);
+			  }
               $line = <INFILE>;
             }
           } while(!($line =~ /--/));
@@ -59,9 +66,9 @@ sub grab_coords {
           push(@flags, 0);
           next;
         }
-        if ($_ =~ /\s+F:(\S+)/ || ($_ =~ /^F:(\S+)/)) { 
+        if ($_ =~ /\s+F:(\S+)/ || ($_ =~ /^F:(\S+)/)) {
             my @constraints;
-            my @temp = split (/;/, $1); 
+            my @temp = split (/;/, $1);
             while (@temp) {
                 my $bond = [ map { $_ - 1 } split(/-/, shift @temp) ];
                 push (@constraints, $bond);
@@ -83,13 +90,13 @@ sub grab_coords {
                 push (@key_atoms, [@keys]);
             }
             $key_atoms = [@key_atoms];
-        } 
+        }
         if ($_ =~ /\s+B:(\S+)/ || ($_ =~ /^B:(\S+)/)) {
             my @temp = split (/;/, $1);
             my @bonds;
             while (@temp) {
                 my @bonds_frag = split (/,/, shift @temp);
-                @bonds_frag = map { [ map { $_ - 1 } 
+                @bonds_frag = map { [ map { $_ - 1 }
                                       split (/-/, $_) ] } @bonds_frag;
                 push (@bonds, [@bonds_frag]);
             }
@@ -112,7 +119,7 @@ sub grab_coords {
     } elsif ($filename =~ /(\S+)\.pdb/) {		#PDB file
       while(<INFILE>) {
         $_ =~ s/^\s+//;
-	#Typical PDB file line: 
+	#Typical PDB file line:
 	#ATOM     13  CB  ASP A  23      -0.219   5.194 -16.219  1.00 30.89           C
         #****         **  ***            ******   *****  ******                       *
         #This is ugly, but allows us to skip over 'missing' entries in formatted PDB file!
@@ -125,7 +132,7 @@ sub grab_coords {
 	      my $res_name = $3;
 	      my $chain = $4;
 	      my $x = $5;
-	      my $y = $6; 
+	      my $y = $6;
           my $z = $7;
           my $element = $8;
           #strip all whitespace from element name, otherwise I can't use this as a hash key later!
