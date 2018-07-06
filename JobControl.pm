@@ -54,7 +54,7 @@ sub findJob {
         	}
         }
     }elsif ($queue_type =~ /Slurm/i) {
-        my @alljobs=`squeue -o %i_%Z`;
+        my @alljobs=`squeue -o %i_%Z -u $ENV{USER}`;
         foreach my $job (@alljobs) {
             if($job =~ /$Path/) {
                 my @array = split(/_/, $job);

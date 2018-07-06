@@ -88,7 +88,7 @@ sub detect_component {
                 $self->{substrate_atoms} = [0..$TM-1];
             }else {
                 print "No transition metal was found in the geometry. ".
-                      "Catalysis is found to be a pure organic system. " .
+                      "Catalysis object is determined to be purely organic. " .
                       "If this is a Si, P or other non-metal atom centered ".
                       "system, please specify that in the .xyz file.\n";
                 $self->{substrate_atoms} = [0..$self->{ligand_atoms}->[0]-1];
@@ -103,8 +103,8 @@ sub detect_component {
                 $self->{ligand_atoms} = [$TM+1..$#{ $self->{elements} }];
                 $self->{substrate_atoms} = [0..$TM-1];
             }else {
-                die "This is a pure organic system " .
-                    "You must specify the ligand atoms in the xyz file";
+                die "This is a purely organic system " .
+                    "You must specify the ligand atoms in the .xyz file";
 
             }
         }else {
@@ -144,13 +144,13 @@ sub detect_component {
 
         unless (@key_atoms) {
             die "No connection detected between ligand and metal " .
-                "You probably need to write the key atoms in the xyz file.\n";
+                "You probably need to denote the key atoms in the xyz file.\n";
         }else {
             $self->{ligand_keyatoms} = [[@key_atoms]];
             $self->{ligand}->{active_centers} = $self->{ligand_keyatoms};
         }
     }else {
-        die "For a poure organic system, you are required to provide " .
+        die "For a purely organic system, you are required to provide " .
             "active center information for the catalyst";
     }
 
@@ -486,7 +486,7 @@ sub _map_ligand {
     my $ref1_center = shift @key_atoms1;
     my $ref2_center = shift @key_atoms2;
     if (@$ref1_center != @$ref2_center) {
-        warn("reference atom numer not equal for ligand map!\n");
+        warn("reference atom number not equal for ligand map!\n");
         next;
     }
 
@@ -2068,7 +2068,7 @@ sub _map_remote {
             }else {
                 $keepgoing = 0;
                 if ($minRMSD > 0.4) {
-                    print "Mapping may failed";
+                    print "Mapping may have failed";
                 }
             }
 

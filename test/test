@@ -5,6 +5,10 @@
 use strict; use warnings;
 use Cwd qw(cwd);
 
+if(!defined($ENV{'QCHASM'})) {
+  die "Need to set environmental variable QCHASM!\n\nSee https://github.com/QChASM/Aaron/wiki/Getting-Started-with-AARON-and-AaronTools\n\n";
+}
+
 my $QCHASM = $ENV{'QCHASM'};
 
 my $TESTDIR = "$QCHASM/AaronTools/test";
@@ -23,7 +27,7 @@ chdir($TESTDIR);
 my $current_dir = cwd;
 
 my $case_num = @cases;
-print "$case_num cases found...\n";
+print "$case_num test cases found...\n";
 print "=" x 88 . "\n";
 sleep (1);
 
