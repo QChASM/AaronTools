@@ -631,7 +631,7 @@ sub rotate {
             $self->genrotate(V(0,0,1), $angle);
             last Switch;
         }
-        die "Can only rotate around Cartesian axes!\n";
+        die "Can only rotate around Cartesian axes (x, y, or z)!\n";
     }
 }
 
@@ -1371,7 +1371,7 @@ sub rotatable_bonds {
                 }
             }else {
                 my $msg = "Unrotatable bond criterion $ele1-$ele2 is not implemented, " .
-                          "This bond will be viewed as rotatable bond\n";
+                          "This bond will be viewed as a rotatable bond\n";
                 warn($msg);
             }
         }
@@ -1936,7 +1936,7 @@ sub compare_lib {
        $self->{conformer_num} = $subs->{$subs[0]}->{conformer_num};
        $self->{conformer_angle} = $subs->{$subs[0]}->{conformer_angle};
     }else {
-       print "Multiple similar substituent was found, but can not tell which one it is (No conformer information): \n";
+       print "Multiple similar substituents were found, but cannot tell which one it is (No conformer information): \n";
        print "@subs\n";
     }
 }

@@ -172,8 +172,8 @@ sub examine_structure {
 
     if ($key_atoms && $#{ $key_atoms } > 0) {
         if (! $bonds) {
-            print "more than 1 reactive fragments was found, ".
-                  "so the bond connecting two fragments should be specified. ";
+            print "more than 1 reactive fragment was found, ".
+                  "so the bond connecting the two fragments should be specified. ";
             $correct_input = 0;
         }elsif ($#{ $key_atoms } != $#{ $bonds } + 1) {
             print "The number of bonds connecting reactive fragments of catalyst " .

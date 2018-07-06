@@ -362,7 +362,7 @@ sub Grimme_G {
     my $v0 = 100;           #cutoff for quasi rrho
 
     if (!$self->frequency()) {
-        print "Cannot calculate the Grimme free energy without frequncy information\n";
+        print "Cannot calculate the Grimme free energy without vibrational frequencies\n";
     }
     my $rottemps = $self->{rotational_temperature};
 
@@ -460,7 +460,7 @@ sub new {
     if ($hpmodes && (@num_head == 2)) {
         @input = @input[0..$num_head[1] - 1];
     }elsif ($hpmodes) {
-        print "The .log file is damaged, cannot get frequency\n";
+        print "The .log file is damaged, cannot get frequencies\n";
         return;
     }
 
