@@ -7,6 +7,7 @@ use AaronTools::Constants qw(CUTOFF NAMES);
 use AaronTools::Atoms qw (:BASIC :LJ);
 
 my $QCHASM = $ENV{'QCHASM'};
+$QCHASM =~ s|/\z||;	#Strip trailing / from $QCHASM if it exists
 my $mass = MASS;
 my $CUTOFF = CUTOFF;
 my $TMETAL = TMETAL;
