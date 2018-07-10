@@ -11,6 +11,7 @@ use Cwd qw(getcwd);
 our @EXPORT = qw(findJob killJob submit_job count_time get_job_template);
 
 my $QCHASM = $ENV{'QCHASM'};
+$QCHASM =~ s|/\z||;	#Strip trailing / from $QCHASM if it exists
 
 my $queue_type = $ENV{'QUEUE_TYPE'};
 
