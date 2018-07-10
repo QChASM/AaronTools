@@ -17,7 +17,7 @@ sub main {
 
     foreach my $file ( @{$files} ) {
         my $geom = _utils::get_geom($file);
-		next unless $geom;
+        next unless $geom;
 
         $geom->mirror_coords( $opt{axis} );
 
@@ -32,7 +32,7 @@ sub main {
             print("Saving mirrored coords to $outfile\n") if $outfile;
             $comment = _utils::strip_dir($outfile);
         } else {
-			print("###\n") if ($file ne $files->[0]);
+            print("###\n") if ( $file ne $files->[0] );
             $comment = _utils::strip_dir($file);
         }
         $comment .= "   Mirror (" . $opt{axis} . ")";
@@ -47,25 +47,24 @@ my %opt;
 $opt{help}  = '';
 $opt{axis}  = 'x';
 $opt{write} = '-';
-GetOptions(
-    'help|h'    => \$opt{help},
-    'axis|x=s'  => \$opt{axis},
-    'write|w:s' => \$opt{write} )
-  or pod2usage( {
-      -exitval => 1,
-      -verbose => 1
-  } );
+GetOptions( 'help|h'    => \$opt{help},
+            'axis|x=s'  => \$opt{axis},
+            'write|w:s' => \$opt{write} )
+  or pod2usage(
+                { -exitval => 1,
+                  -verbose => 1
+                } );
 pod2usage(0) if $opt{help};
-pod2usage( {
-        -message => "Please specify at least one filename\n",
-        -exitval => 1,
-        -verbose => 1
-    } ) if @ARGV < 1;
-pod2usage( {
-        -message => "Please specify x, y, or z to mirror\n",
-        -exitval => 1,
-        -verbose => 1
-    } ) unless ( $opt{axis} =~ m/[xXyYzZ]/ );
+pod2usage(
+           { -message => "Please specify at least one filename\n",
+             -exitval => 1,
+             -verbose => 1
+           } ) if @ARGV < 1;
+pod2usage(
+           { -message => "Please specify x, y, or z to mirror\n",
+             -exitval => 1,
+             -verbose => 1
+           } ) unless ( $opt{axis} =~ m/[xXyYzZ]/ );
 
 &main( \@ARGV, %opt );
 

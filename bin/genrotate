@@ -47,10 +47,10 @@ sub main {
             # $outfile will be empty string if write to file not requested
             my $axis = join( '_', @{ $opt{vector} } );
             my $outfile = _utils::get_outfile( $file, $opt{write},
-                [ 'genrotate', $axis, rad2deg($angle) ] );
+                                      [ 'genrotate', $axis, rad2deg($angle) ] );
             if ( $opt{radians} ) {
                 my $outfile = _utils::get_outfile( $file, $opt{write},
-                    [ 'genrotate', $axis, $angle ] );
+                                               [ 'genrotate', $axis, $angle ] );
             }
 
             # set comment line to something useful
@@ -59,7 +59,7 @@ sub main {
                 print("Saving to $outfile\n") if $outfile;
                 $comment = _utils::strip_dir($outfile);
             } else {
-                print("###\n") if ($file ne $files->[0]);
+                print("###\n") if ( $file ne $files->[0] );
                 $comment = _utils::strip_dir($file);
             }
             if ( $opt{radians} ) {
@@ -86,36 +86,35 @@ $opt{nrots}   = 1;
 $opt{targets} = \@targets;
 $opt{radians} = '';
 $opt{write}   = '-';         # '-' indicates no write, '' indicates write to cwd
-GetOptions(
-    'help|h'         => \$opt{help},
-    'vector|v=f{3}'  => \@vector,
-    'angle|a:f'      => \$opt{angle},
-    'nrots|n:i'      => \$opt{nrots},
-    'targets|t:i{,}' => \@targets,
-    'radians|r'      => \$opt{radians},
-    'write|w:s'      => \$opt{write} )
-  or pod2usage( {
-      -exitval => 1,
-      -verbose => 1
-  } );
+GetOptions( 'help|h'         => \$opt{help},
+            'vector|v=f{3}'  => \@vector,
+            'angle|a:f'      => \$opt{angle},
+            'nrots|n:i'      => \$opt{nrots},
+            'targets|t:i{,}' => \@targets,
+            'radians|r'      => \$opt{radians},
+            'write|w:s'      => \$opt{write} )
+  or pod2usage(
+                { -exitval => 1,
+                  -verbose => 1
+                } );
 pod2usage(0) if $opt{help};
 
 # requires axis vector, angle or number of rotations, and at least one file
-pod2usage( {
-        -message =>
-          "Please provide an axis vector, an angle and/or a number of rotations, and at least one file\n",
-        -exitval => 1,
-        -verbose => 1
+pod2usage(
+    {  -message =>
+         "Please provide an axis vector, an angle and/or a number of rotations, and at least one file\n",
+       -exitval => 1,
+       -verbose => 1
     } )
-  unless ( @ARGV > 0
-    and @{ $opt{vector} }
-    and ( $opt{angle} or $opt{nrots} > 1 ) );
+  unless (     @ARGV > 0
+           and @{ $opt{vector} }
+           and ( $opt{angle} or $opt{nrots} > 1 ) );
 
-pod2usage( {
-        -message => "Number of rotations must be a positive integer.\n",
-        -exitval => 1,
-        -verbose => 1
-    } ) if ( $opt{nrots} < 0 );
+pod2usage(
+           { -message => "Number of rotations must be a positive integer.\n",
+             -exitval => 1,
+             -verbose => 1
+           } ) if ( $opt{nrots} < 0 );
 
 # targets supplied as 1-indexed, Aaron uses 0-indexing
 foreach my $t ( @{ $opt{targets} } ) {

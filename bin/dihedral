@@ -30,10 +30,11 @@ sub main {
         &change_dihedral( $geom, $opt{rads}, @{ $opt{change} } );
     }
 
-	#prints to STDOUT  if $opt{output} == '' or saves to file
-	if ( @{ $opt{set} } or @{ $opt{change} } ){
-        $geom->printXYZ( $opt{output} );
-	}
+    #prints to STDOUT  if $opt{output} == '' or saves to file
+    if ( @{ $opt{set} } or @{ $opt{change} } ) {
+        $opt{output} = _utils::handle_overwrite( $opt{output} );
+        $geom->printXYZ( $opt{output}, '', 1 );
+    }
     return 0;
 }
 
@@ -120,28 +121,27 @@ my %opt;
 $opt{help}   = '';
 $opt{rads}   = '';
 $opt{output} = '';
-GetOptions(
-    'help|h'        => \$opt{help},
-    'radians|r'     => \$opt{rads},
-    'change|c=f{3}' => \@{ $opt{change} },
-    'print|p=i{4}'  => \@{ $opt{print} },
-    'set|s=f{5}'    => \@{ $opt{set} },
-    'output|o=s'    => \$opt{output} )
-  or pod2usage( {
-      -exitval => 1,
-      -verbose => 1
-  } );
+GetOptions( 'help|h'        => \$opt{help},
+            'radians|r'     => \$opt{rads},
+            'change|c=f{3}' => \@{ $opt{change} },
+            'print|p=i{4}'  => \@{ $opt{print} },
+            'set|s=f{5}'    => \@{ $opt{set} },
+            'output|o=s'    => \$opt{output} )
+  or pod2usage(
+                { -exitval => 1,
+                  -verbose => 1
+                } );
 pod2usage(0) if $opt{help};
-pod2usage( {
-        -message => "Please specify a filename\n",
-        -exitval => 1,
-        -verbose => 1
-    } ) if @ARGV < 1;
-pod2usage( {
-        -message =>
-          "Please specify at least one of the following: --change, --print, --set\n",
-        -exitval => 1,
-        -verbose => 1
+pod2usage(
+           { -message => "Please specify a filename\n",
+             -exitval => 1,
+             -verbose => 1
+           } ) if @ARGV < 1;
+pod2usage(
+    {  -message =>
+         "Please specify at least one of the following: --change, --print, --set\n",
+       -exitval => 1,
+       -verbose => 1
     } ) unless ( @{ $opt{change} } or @{ $opt{print} } or @{ $opt{set} } );
 
 &main( $ARGV[0], %opt );

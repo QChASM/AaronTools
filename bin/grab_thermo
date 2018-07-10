@@ -47,25 +47,26 @@ sub main {
             printf( "Grimme_G = %.6f\n\n", $grimmeG );
         }
     }
-    close(OFILE) || die "couldn't close $opt{output}: $!";
+    if ( $opt{output} ) {
+        close(OFILE) || die "couldn't close $opt{output}: $!";
+    }
 }
 
 my %opt;
 $opt{help}   = '';
 $opt{output} = '';
-GetOptions(
-    'help|h'     => \$opt{help},
-    'output|o:s' => \$opt{output} )
-  or pod2usage( {
-      -exitval => 1,
-      -verbose => 1
-  } );
+GetOptions( 'help|h'     => \$opt{help},
+            'output|o:s' => \$opt{output} )
+  or pod2usage(
+                { -exitval => 1,
+                  -verbose => 1
+                } );
 pod2usage(0) if $opt{help};
-pod2usage( {
-        -message => "Please specify a filename\n",
-        -exitval => 1,
-        -verbose => 1
-    } ) if @ARGV < 1;
+pod2usage(
+           { -message => "Please specify a filename\n",
+             -exitval => 1,
+             -verbose => 1
+           } ) if @ARGV < 1;
 
 &main( \%opt, @ARGV );
 
