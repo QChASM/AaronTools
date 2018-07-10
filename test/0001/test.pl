@@ -14,7 +14,7 @@ eval {
     
     my $original = new AaronTools::Catalysis( name=>'ref');
     
-    my $ligand = new AaronTools::Ligand( name => 'SEGPHOS');
+    my $ligand = new AaronTools::Ligand( name => 'R-SEGPHOS');
 
     $cata->map_ligand($ligand);
     
