@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 use strict;
-use lib $ENV{'AARON'};
+use lib $ENV{'QCHASM'};
 use lib $ENV{'PERL_LIB'};
 
 use Getopt::Long;
@@ -11,7 +11,7 @@ use Math::Vector::Real;
 use Math::Trig;
 
 use AaronTools::Geometry;
-unshift @INC, ("$ENV{'AARON'}/bin");
+unshift @INC, ("$ENV{'QCHASM'}/bin");
 require _utils;
 
 my $debug;
@@ -28,7 +28,7 @@ sub main {
             $opt{name} =~ s/(.*)\.xyz/$1/;
         }
         $opt{name} =
-          $ENV{'HOME'} . "/AARON_LIBS/Subs/" . $opt{name} . ".xyz";
+          $ENV{'HOME'} . "/Aaron_libs/Subs/" . $opt{name} . ".xyz";
         if ( -e $opt{name} ) {
             die
               "Substituent of the same name already in your AaronTools library. Please choose a different name or delete it.\nFile already exists at: $opt{name}\n";

@@ -222,8 +222,8 @@ Returns a hash, keyed by substituent labels provided during catalyst object gene
 
 sub get_available_subs {
 	my @available = grep { s/.*\/(.*).xyz/$1/ } <$ENV{QCHASM}/AaronTools/Subs/*.xyz>;
-	if (-d "$ENV{HOME}/AARON_LIBS/Subs"){
-		push @available, grep { s/.*\/(.*).xyz/$1/ } <$ENV{HOME}/AARON_LIBS/Subs/*.xyz>;
+	if (-d "$ENV{HOME}/Aaron_libs/Subs"){
+		push @available, grep { s/.*\/(.*).xyz/$1/ } <$ENV{HOME}/Aaron_libs/Subs/*.xyz>;
 	}
 	my $count = 0;
 	foreach my $a (@available){
