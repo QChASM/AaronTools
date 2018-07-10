@@ -163,6 +163,40 @@ Removes the directory path and returns only the file name
     return $fname;
 }
 
+sub handle_overwrite {
+
+=head2 handle_overwrite( $outfile )
+
+Queries the user to see if it is ok to overwrite the file, if it exists. Returns the (possibly edited) file name.
+
+=cut
+
+    my $outfile     = shift;
+    my $old_outfile = $outfile;
+    while ( $outfile && -f $outfile ) {
+        my $ans;
+        do {
+            $ans = '';
+            print "File $outfile exists... Ok to overwrite? [y/N]: ";
+            $ans = <STDIN>;
+            chomp $ans;
+        } while ( $ans !~ /^y(es)?$/i && $ans !~ /^no?$/i && $ans !~ /^$/ );
+        if ( $ans !~ /^y(es)?$/i ) {
+            print "New name: ";
+            $outfile = <STDIN>;
+            chomp $outfile;
+            if ( $outfile =~ /^$/ ) {
+                $outfile = $old_outfile;
+            } elsif ( $outfile =~ /^stdout$/i ) {
+                $outfile = '';
+            }
+        } else {
+            last;
+        }
+    }
+    return $outfile;
+}
+
 sub get_ligstart {
 
 =head2 get_ligstart($catalysis)
