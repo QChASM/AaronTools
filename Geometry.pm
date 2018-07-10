@@ -13,6 +13,7 @@ our $CUTOFF = CUTOFF;
 our $mass = MASS;
 our $radii = RADII;
 our $QCHASM = $ENV{'QCHASM'};
+$QCHASM =~ s|/\z||;	#Strip trailing / from $QCHASM if it exists
 our $rij = RIJ;
 our $eij = EIJ;
 
