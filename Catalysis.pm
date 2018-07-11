@@ -676,6 +676,8 @@ sub screen_subs {
 #you just provide atom numbers of the catalysis system
 #and the substitutent you want to make.
 #This can only be used when your substitutent target is also a
+#
+###Need to die with error if trying to substitute a key atom!###
 sub substitute {
     my $self = shift;
 
