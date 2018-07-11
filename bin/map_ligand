@@ -11,26 +11,27 @@ unshift @INC, ("$ENV{'QCHASM'}/AaronTools/bin");
 require _utils;
 
 sub main {
-	my $reffile    = shift;
-	my %opt        = @_;
+    my $reffile = shift;
+    my %opt     = @_;
 
-	# read in reference geometry
-	my $refgeom    = _utils::get_cat($reffile);
-	return 1 unless $refgeom;
-	foreach my $targetfile ( @{$opt{ligand}} ) {
-		my $ligand = _utils::get_lig($targetfile);
-		next unless $ligand;
+    # read in reference geometry
+    my $refgeom = _utils::get_cat($reffile);
+    return 1 unless $refgeom;
+    foreach my $targetfile ( @{ $opt{ligand} } ) {
+        my $ligand = _utils::get_lig($targetfile);
+        next unless $ligand;
 
-		# perform map ligand
-		my $mapped = $refgeom->copy();
-		$mapped->map_ligand($ligand);
+        # perform map ligand
+        my $mapped = $refgeom->copy();
+        $mapped->map_ligand($ligand);
 
-		# Printing
-		# prints to STDOUT if $outfile == ''
-		my $outfile = _utils::get_outfile(_utils::strip_dir($targetfile), $opt{write}, ['mapped']);
-		print("Saving mapped ligand to $outfile\n") if $outfile;
-		$mapped->printXYZ( $outfile );
-	}
+        # Printing
+        # prints to STDOUT if $outfile == ''
+        my $outfile = _utils::get_outfile( _utils::strip_dir($targetfile),
+                                           $opt{write}, ['mapped'] );
+        print("Saving mapped ligand to $outfile\n") if $outfile;
+        $mapped->printXYZ($outfile);
+    }
 }
 
 # read in options
@@ -39,26 +40,25 @@ my @ligand_geoms;
 $opt{help}   = '';
 $opt{ligand} = \@ligand_geoms;
 $opt{write}  = '-';
-GetOptions(
-    'help|h'    => \$opt{help},
-    'ligand|l=s'  => \@ligand_geoms,
-    'write|w:s' => \$opt{write} )
-  or pod2usage( {
-      -exitval => 1,
-      -verbose => 1
-  } );
+GetOptions( 'help|h'     => \$opt{help},
+            'ligand|l=s' => \@ligand_geoms,
+            'write|w:s'  => \$opt{write} )
+  or pod2usage(
+                { -exitval => 1,
+                  -verbose => 1
+                } );
 pod2usage(0) if $opt{help};
 
-pod2usage( {
-        -message => "Please provide a reference geometry",
-        -exitval => 1,
-        -verbose => 1
-    } ) unless ( $ARGV[0] );
-pod2usage( {
-		-message => "Please provide at least one ligand geometry",
-		-exitval=> 1,
-		-verbose => 1
-	})unless (@ligand_geoms > 0 );
+pod2usage(
+           { -message => "Please provide a reference geometry",
+             -exitval => 1,
+             -verbose => 1
+           } ) unless ( $ARGV[0] );
+pod2usage(
+           { -message => "Please provide at least one ligand geometry",
+             -exitval => 1,
+             -verbose => 1
+           } ) unless ( @ligand_geoms > 0 );
 
 &main( $ARGV[0], %opt );
 

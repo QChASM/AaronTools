@@ -62,8 +62,9 @@ sub main {
 
     # Printing
     # prints to STDOUT if $outfile == ''
+    $opt{outfile} = _utils::handle_overwrite( $opt{outfile} );
     print("Saving substituted coords to $opt{outfile}\n") if $opt{outfile};
-    $geom->printXYZ( $opt{outfile} );
+    $geom->printXYZ( $opt{outfile}, '', 1 );
 }
 
 # read in options
@@ -97,10 +98,8 @@ pod2usage(
 if ( $opt{available} ) {
     _utils::get_available_subs();
 } else {
-    &main( \@ARGV, %opt );
+    &main( $ARGV[0], %opt );
 }
-
-&main( $ARGV[0], %opt );
 
 =pod
 

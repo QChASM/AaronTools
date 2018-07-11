@@ -25,7 +25,6 @@ sub main {
         my $nshift = 0;
         my $vector = V( @{ $opt{vector} } );
         while ( $nshift < $opt{nshift} ) {
-
             # shift target atoms if specified, defaults to all atoms
             if ( @{ $opt{targets} } ) {
                 $geom->coord_shift( $vector, $opt{targets} );
@@ -46,13 +45,13 @@ sub main {
             # generate outfile name and comment string
             my $outfile =
               _utils::get_outfile( $file, $opt{write},
-                [ 'shift', join( '_', @v ) ] );
+                                   [ 'shift', join( '_', @v ) ] );
             my $comment = _utils::strip_dir($file);
             $comment .= '   Shifted by (' . join( ',', @v ) . ')';
             if ($outfile) {
                 print("Saved to $outfile\n");
             } else {
-				print("###\n") if ($file ne $files->[0]);
+                print("###\n") if ( $file ne $files->[0] );
             }
 
             # prints to STDOUT if $outfile == ''
@@ -70,30 +69,29 @@ $opt{vector}  = \@vector;
 $opt{nshift}  = 1;
 $opt{targets} = \@targets;
 $opt{write}   = '-';         # '-' indicates no write, '' indicates write to cwd
-GetOptions(
-    'help|h'         => \$opt{help},
-    'vector|v=f{3}'  => \@vector,
-    'nshift|n:i'     => \$opt{nshift},
-    'targets|t:i{,}' => \@targets,
-    'write|w:s'      => \$opt{write} )
-  or pod2usage( {
-      -exitval => 1,
-      -verbose => 1
-  } );
+GetOptions( 'help|h'         => \$opt{help},
+            'vector|v=f{3}'  => \@vector,
+            'nshift|n:i'     => \$opt{nshift},
+            'targets|t:i{,}' => \@targets,
+            'write|w:s'      => \$opt{write} )
+  or pod2usage(
+                { -exitval => 1,
+                  -verbose => 1
+                } );
 pod2usage(0) if $opt{help};
 
 # requires a shift vector and at least one file
-pod2usage( {
-        -message => "Please provide a shift vector and at least one file",
-        -exitval => 1,
-        -verbose => 1
-    } ) unless ( @ARGV > 0 and @{ $opt{vector} } );
+pod2usage(
+           { -message => "Please provide a shift vector and at least one file",
+             -exitval => 1,
+             -verbose => 1
+           } ) unless ( @ARGV > 0 and @{ $opt{vector} } );
 
-pod2usage( {
-        -message => "Number of repeats must be a positive integer.\n",
-        -exitval => 1,
-        -verbose => 1
-    } ) if ( $opt{nshift} < 0 );
+pod2usage(
+           { -message => "Number of repeats must be a positive integer.\n",
+             -exitval => 1,
+             -verbose => 1
+           } ) if ( $opt{nshift} < 0 );
 
 # targets supplied as 1-indexed, Aaron uses 0-indexing
 foreach my $t ( @{ $opt{targets} } ) {

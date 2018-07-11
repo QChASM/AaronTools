@@ -26,20 +26,20 @@ sub main {
     }
 
     # perform rmsd align
-    my $rmsd = $targetgeom->RMSD(
-        'ref_geo'     => $refgeom,
-        'ref_atoms1'  => $opt{targetatoms},
-        'ref_atoms2'  => $opt{refatoms},
-        'heavy_atoms' => $opt{heavyatoms} );
+    my $rmsd = $targetgeom->RMSD( 'ref_geo'     => $refgeom,
+                                  'ref_atoms1'  => $opt{targetatoms},
+                                  'ref_atoms2'  => $opt{refatoms},
+                                  'heavy_atoms' => $opt{heavyatoms} );
 
     # Printing
     # prints to STDOUT if $outfile == ''
-    print(  _utils::strip_dir($targetfile)
-          . " -> aligned to "
-          . _utils::strip_dir($reffile)
-          . "\n" );
+    print(   STDERR _utils::strip_dir($targetfile)
+           . " -> aligned to "
+           . _utils::strip_dir($reffile)
+           . "\n" );
+    $opt{outfile} = _utils::handle_overwrite( $opt{outfile} );
     print("Saving substituted coords to $opt{outfile}\n") if $opt{outfile};
-    $targetgeom->printXYZ( $opt{outfile}, "RMSD: $rmsd" );
+    $targetgeom->printXYZ( $opt{outfile}, "RMSD: $rmsd", 1 );
 }
 
 # read in options
@@ -51,23 +51,22 @@ $opt{heavyatoms}  = '';
 $opt{refatoms}    = undef;
 $opt{targetatoms} = undef;
 $opt{outfile}     = '';
-GetOptions(
-    'help|h'              => \$opt{help},
-    'heavyatoms|ha'       => \$opt{heavyatoms},
-    'refatoms|r=i{1,}'    => \@refatoms,
-    'targetatoms|t=i{1,}' => \@targetatoms,
-    'output|o=s'          => \$opt{outfile} )
-  or pod2usage( {
-      -exitval => 1,
-      -verbose => 1
-  } );
+GetOptions( 'help|h'              => \$opt{help},
+            'heavyatoms|ha'       => \$opt{heavyatoms},
+            'refatoms|r=i{1,}'    => \@refatoms,
+            'targetatoms|t=i{1,}' => \@targetatoms,
+            'output|o=s'          => \$opt{outfile} )
+  or pod2usage(
+                { -exitval => 1,
+                  -verbose => 1
+                } );
 pod2usage(0) if $opt{help};
 
-pod2usage( {
-        -message => "Please provide a reference and target geometry",
-        -exitval => 1,
-        -verbose => 1
-    } ) unless ( @ARGV == 2 );
+pod2usage(
+           { -message => "Please provide a reference and target geometry",
+             -exitval => 1,
+             -verbose => 1
+           } ) unless ( @ARGV == 2 );
 
 # AaronTools uses 0-indexing
 foreach my $r (@refatoms) {

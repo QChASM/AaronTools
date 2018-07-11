@@ -44,6 +44,14 @@ sub new {
             $self->read_geometry("$self->{name}.xyz");
             #ligand backbone and sub
             $self->detect_component();
+
+			my @keyatoms = map { @$_ } @{ $self->{ligand_keyatoms} };
+			for my $k ( keys %{ $substituents->{ligand} } ){
+				if ( grep { $k == $_ } @keyatoms ){
+					die "Cannot assign substituents to key atoms";
+				}
+			}
+
             $self->ligand()->set_substituents($substituents->{ligand});
             $self->ligand()->detect_backbone_subs( no_new_subs => $params{no_new_subs} );
             #substrate subs
@@ -668,6 +676,8 @@ sub screen_subs {
 #you just provide atom numbers of the catalysis system
 #and the substitutent you want to make.
 #This can only be used when your substitutent target is also a
+#
+###Need to die with error if trying to substitute a key atom!###
 sub substitute {
     my $self = shift;
 
@@ -692,6 +702,16 @@ sub substitute {
 
     my @inexplicit_subs = grep { $_ !~ /^\d+$/ } keys %substituents;
     my @explicit_subs = grep { $_ =~ /^\d+$/ } keys %substituents;
+
+	# fail if substitution requested for key atoms
+	if ( $component eq $LIGAND ){
+		my @keyatoms = map { @$_ } @{ $self->{ligand_keyatoms} };
+		for my $k ( @keyatoms ){
+			if ( grep { $_ == $k } @explicit_subs ){
+				die "Cannot substitute key atoms\n"
+			}
+		}
+	}
 
     for my $inexplicit_sub (@inexplicit_subs) {
         my @subs = grep { $object->{substituents}->{$_}->{name} eq $inexplicit_sub }

@@ -62,22 +62,21 @@ my %opt;
 my @confs;
 $opt{confs} = \@confs;
 $opt{name}  = '';
-GetOptions(
-    'help|h'   => \$opt{help},
-    'debug|d'  => \$debug,
-    'name|n:s' => \$opt{name} )
-  or pod2usage( {
-      -exitval => 1,
-      -verbose => 1
-  } );
+GetOptions( 'help|h'   => \$opt{help},
+            'debug|d'  => \$debug,
+            'name|n:s' => \$opt{name} )
+  or pod2usage(
+                { -exitval => 1,
+                  -verbose => 1
+                } );
 pod2usage(0) if $opt{help};
 
 # need to supply a geometry file
-pod2usage( {
-        -message => "Please provide one geometry file to substitute",
-        -exitval => 1,
-        -verbose => 1
-    } ) unless ( $#ARGV == 0 );
+pod2usage(
+           { -message => "Please provide one geometry file to substitute",
+             -exitval => 1,
+             -verbose => 1
+           } ) unless ( $#ARGV == 0 );
 
 &main( $ARGV[0], %opt );
 
