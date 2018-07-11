@@ -5,6 +5,7 @@ use lib $ENV{'QCHASM'};
 
 use Getopt::Long;
 use Pod::Usage;
+use Data::Dumper;
 use AaronTools::Geometry;
 
 unshift @INC, ("$ENV{'QCHASM'}/AaronTools/bin");
@@ -22,10 +23,9 @@ sub main {
         foreach my $target ( keys %{ $opt{subs} } ) {
 
             # target supplied as 1-indexed, Aaron uses 0-indexing
-            $geom->substitute(
-                'target'           => $target - 1,
-                'sub'              => $opt{subs}{$target},
-                'minimize_torsion' => $opt{minimize_torsion} );
+            $geom->substitute( 'target'           => $target - 1,
+                               'sub'              => $opt{subs}{$target},
+                               'minimize_torsion' => $opt{minimize_torsion} );
 
         }
 
@@ -55,30 +55,34 @@ $opt{help}        = '';
 $opt{subs}        = \%sublist;
 $opt{min_torsion} = '';
 $opt{write} = '-';    # '-' indicates no write, '' indicates write to cwd
-GetOptions(
-    'help|h'       => \$opt{help},
-    'sub|s=s%{1,}' => \%sublist,
-    'minimize|m'   => \$opt{minimize_torsion},
-    'write|w:s'    => \$opt{write} )
-  or pod2usage( {
-      -exitval => 1,
-      -verbose => 1
-  } );
+GetOptions( 'help|h'       => \$opt{help},
+            'available|a'  => \$opt{available},
+            'sub|s=s%{1,}' => \%sublist,
+            'minimize|m'   => \$opt{minimize_torsion},
+            'write|w:s'    => \$opt{write} )
+  or pod2usage(
+                { -exitval => 1,
+                  -verbose => 1
+                } );
 pod2usage(0) if $opt{help};
 
-pod2usage( {
-        -message =>
-          "Please provide at least one target atom and substituent pair",
-        -exitval => 1,
-        -verbose => 1
-    } ) unless ( keys(%sublist) > 0 );
-pod2usage( {
-        -message => "Please provide a geometry file",
-        -exitval => 1,
-        -verbose => 1
-    } ) unless ( @ARGV > 0 );
+pod2usage(
+           { -message =>
+               "Please provide at least one target atom and substituent pair",
+             -exitval => 1,
+             -verbose => 1
+           } ) if ( keys(%sublist) < 1 && !$opt{available} );
+pod2usage(
+           { -message => "Please provide a geometry file",
+             -exitval => 1,
+             -verbose => 1
+           } ) if ( @ARGV < 1 && !$opt{available} );
 
-&main( \@ARGV, %opt );
+if ( $opt{available} ) {
+    _utils::get_available_subs();
+} else {
+    &main( \@ARGV, %opt );
+}
 
 =pod
 
@@ -89,6 +93,10 @@ substitute [options] -s atom1=sub1 [atom2=sub2 ...] file [file2 ...]
 =head1 OPTIONS
 
 =over
+
+=item B<-a>, B<--available>
+
+List available substituent names
 
 =item B<-s atom=sub>, B<--sub atom=sub>
 

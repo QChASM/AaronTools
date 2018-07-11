@@ -32,11 +32,11 @@ sub main {
     ( $numbered{ligand}, $named{ligand} ) = store_requested( \%opt, 'ligand' );
     ( $numbered{substrate}, $named{substrate} ) =
       store_requested( \%opt, 'substrate' );
-	if ( $debug ){
-		print "NUMBERED\n", Dumper(%numbered);
-		print "NAMED\n", Dumper(%named);
-		print "\n";
-	}
+    if ($debug) {
+        print "NUMBERED\n", Dumper(%numbered);
+        print "NAMED\n",    Dumper(%named);
+        print "\n";
+    }
 
     # create catalysis object with requested substituent indexing
     my $geom = _utils::get_cat( $file, \%numbered, $opt{relnum} ) if -e $file;
@@ -47,10 +47,10 @@ sub main {
     #
     # Ligand screen_subs (can't do both components at same time)
     my %params = get_params( $geom, 'ligand', %opt );
-	while ( my ($k, $v) = each %{ $named{ligand} } ){
-		$params{$k} = [split /,/, $v];
-	}
-	if ($debug) {
+    while ( my ( $k, $v ) = each %{ $named{ligand} } ) {
+        $params{$k} = [ split /,/, $v ];
+    }
+    if ($debug) {
         print "PARAMS\n";
         print Dumper(%params);
         print "\n";
@@ -90,7 +90,7 @@ sub main {
 
         # generate filename (with appropriate directory)
         my $outfile = _utils::get_outfile( _utils::strip_dir($file),
-            $opt{write}, \@appends );
+                                           $opt{write}, \@appends );
 
         # save or print to stdout
         print("Saving substituted coords to $outfile\n") if $outfile;
@@ -170,7 +170,7 @@ sub get_appends {
         } else {
             push @appends,
               ( ( $k + $geom->{ $component . "_atoms" }[0] + 1 ) . '-'
-                  . $v->{name} );
+                . $v->{name} );
         }
     }
 
@@ -184,29 +184,33 @@ my %liglist;
 $opt{substrate} = \%sublist;
 $opt{ligand}    = \%liglist;
 $opt{write}     = '-';
-GetOptions(
-    'help|h'            => \$opt{help},
-    'debug|d'           => \$debug,
-    'substrate|s=s%{,}' => \%sublist,
-    'ligand|l=s%{,}'    => \%liglist,
-    'relnum|r'          => \$opt{relnum},
-    'write|w:s'         => \$opt{write} )
-  or pod2usage( {
-      -exitval => 1,
-      -verbose => 1
-  } );
+GetOptions( 'help|h'            => \$opt{help},
+            'available'         => \$opt{available},
+            'debug|d'           => \$debug,
+            'substrate|s=s%{,}' => \%sublist,
+            'ligand|l=s%{,}'    => \%liglist,
+            'relnum|r'          => \$opt{relnum},
+            'write|w:s'         => \$opt{write} )
+  or pod2usage(
+                { -exitval => 1,
+                  -verbose => 1
+                } );
 pod2usage(0) if $opt{help};
 
 # need to supply a geometry file
-pod2usage( {
-        -message => "Please provide one geometry file to substitute",
-        -exitval => 1,
-        -verbose => 1
-    } ) unless ( $#ARGV == 0 );
+pod2usage(
+           { -message => "Please provide one geometry file to substitute",
+             -exitval => 1,
+             -verbose => 1
+           } ) unless ( $#ARGV == 0 );
 
 # target supplied as 1-indexed, Aaron uses 0-indexing
 
-&main( $ARGV[0], %opt );
+if ( $opt{available} ) {
+    _utils::get_available_subs();
+} else {
+    &main( \@ARGV, %opt );
+}
 
 =pod
 
@@ -217,6 +221,10 @@ cat_screen [options] [-l|s target=sub ...] file
 =head1 OPTIONS
 
 =over
+
+=item B<-a>, B<--available>
+
+List available substituents
 
 =item B<-l target=sub1[,sub2,... target2=sub3,sub4,...]>
 

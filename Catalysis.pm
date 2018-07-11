@@ -7,6 +7,7 @@ use AaronTools::Constants qw(CUTOFF NAMES);
 use AaronTools::Atoms qw (:BASIC :LJ);
 
 my $QCHASM = $ENV{'QCHASM'};
+$QCHASM =~ s|/\z||;	#Strip trailing / from $QCHASM if it exists
 my $mass = MASS;
 my $CUTOFF = CUTOFF;
 my $TMETAL = TMETAL;
@@ -1705,6 +1706,7 @@ use Math::Trig;
 use Math::Vector::Real;
 use Data::Dumper;
 our @ISA = qw(AaronTools::Component AaronTools::Geometry);
+my $HOME=$ENV{'HOME'};
 
 sub new {
     my $class = shift;
@@ -1717,8 +1719,11 @@ sub new {
         $self->set_name($params{name});
         if (-f "$QCHASM/AaronTools/Ligands/$self->{name}.xyz") {
             $self->read_geometry("$QCHASM/AaronTools/Ligands/$self->{name}.xyz");
+        } elsif (-f "$HOME/Aaron_libs/Ligands/$self->{name}.xyz") {
+            $self->read_geometry("$HOME/AaronTools/Ligands/$self->{name}.xyz");
+        } else {
+            die "Ligand $self->{name} does not exist! Please add ligand to $HOME/Aaron_libs/Ligands\n";
         }
-
     }
 
     if ($self->{active_centers}) {
