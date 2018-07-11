@@ -1,0 +1,57 @@
+==Achiral ligands==
+BPE = 
+DHPE
+Cp = cyclopentadiene
+Cp_star = pentamethylcyclopentadiene
+DPPP = 1,3-Bis(diphenylphosphino)propane
+DPPE = 1,2-Bis(diphenylphosphino)ethane
+DPPF = 1,1′-Ferrocenediyl-bis(diphenylphosphine)
+DMP = 1,10-dimethyl phenanthroline 
+COD = cyclooctadiene
+BYP = bipyridine
+PhBP3 = PhBP3          (from DOI: 10.1021/ja026433e)
+tBu-PCP = tetra(t-butyl)-2,6-bis(diphosphino)benzene            (from DOI: 10.1126/science.1200514)
+tBu-PNP = tetra(t-butyl)-2,6-bis(diphosphino)pyridine           (from DOI: 10.1021/ic901032c)
+
+==Chiral ligands==
+S-Quinox-tBu3
+R-Quinox-tBu3
+SS-QuinoxP = (S,S)-QuinoxP* 		(from DOI: 10.1038/s41467-018-04693-9)
+RR-QuinoxP = (R,R)-QuinoxP* 		(from DOI: 10.1038/s41467-018-04693-9)
+R-Quinox-AdtBu2 = (R)-Quinox-AdtBu2 	(from DOI: 10.1038/s41467-018-04693-9)
+S-Quinox-AdtBu2 = (S)-Quinox-AdtBu2 	(from DOI: 10.1038/s41467-018-04693-9)
+BiOx_Me
+BiOx
+dithiolate-4F
+Paton_DL
+Paton_EL
+PymdOx-L2
+PymdOx-L3
+PymdOx
+PyrOx
+RR-Me-BPE = (R,R)-Me-BPE
+SS-Me-BPE = (S,S)-Me-BPE
+R-SEGPHOS = (R)-SEGPHOS
+S-SEGPHOS = (S)-SEGPHOS
+JoshPhos = tBu-Joshphos         (from DOI: 10.1021/ol5027798)
+RR-norphos = (2R,3R)-(−)-2,3-Bis(diphenylphosphino)bicyclo[2.2.1]hept-5-ene (A.K.A. (-)-Norphos)
+SS-norphos = (2S,3S)-(−)-2,3-Bis(diphenylphosphino)bicyclo[2.2.1]hept-5-ene (A.K.A. (+)-Norphos)
+RR-BDPP = 2R,4R-bis(diphenylphosphino)pentane          (from DOI: 10.1021/ja0318479)
+SS-BDPP = 2S,4S-bis(diphenylphosphino)pentane          (from DOI: 10.1021/ja0318479)
+RR-Et-DUPhos = (R,R)-iEt-DUPHOS             (from DOI: 10.1016/j.jorganchem.2007.10.005)
+SS-Et-DUPhos = (S,S)-iEt-DUPHOS             (from DOI: 10.1016/j.jorganchem.2007.10.005)
+RR-iPr-DUPhos = (R,R)-iPr-DUPHOS            (from DOI: 10.1016/j.jorganchem.2007.10.005)
+SS-iPr-DUPhos = (S,S)-iPr-DUPHOS            (from DOI: 10.1016/j.jorganchem.2007.10.005)
+RR-Me-DUPhos = (R,R)-iMe-DUPHOS             (from DOI: 10.1016/j.jorganchem.2007.10.005)
+SS-Me-DUPhos = (S,S)-iMe-DUPHOS             (from DOI: 10.1016/j.jorganchem.2007.10.005)
+R-BINAP = (R)-BINAP             (from DOI: 10.1021/ja039103i)
+S-BINAP = (S)-BINAP             (from DOI: 10.1021/ja039103i)
+RR-BPCp = (R,R)-bis(phospholano)cyclopentane            (A.K.A.'2' from DOI: 10.1039/B002994G)
+SS-BPCp = (S,S)-bis(phospholano)cyclopentane            (A.K.A.'2' from DOI: 10.1039/B002994G)
+DPEphos = DPEphos            (from DOI: 10.1021/om201034m)
+Xantphos = Xantphos          (from DOI: 10.1021/om201034m)
+
+==Organocatalysts==
+S-bi-isoquinoline-NN-dioxide = (S)-biisoquinoline-N,N'-dioxide
+squaramide-iPr
+squaramide

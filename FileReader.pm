@@ -66,7 +66,7 @@ sub grab_coords {
           push(@flags, 0);
           next;
         }
-        if ($_ =~ /\s+F:(\S+)/ || ($_ =~ /^F:(\S+)/)) {
+        if ($_ =~ /\s+F:(\S+)/ || ($_ =~ /^F:(\S+)/)) {			    #Constraints (F:1-2;3-4)
             my @constraints;
             my @temp = split (/;/, $1);
             while (@temp) {
@@ -75,14 +75,14 @@ sub grab_coords {
             }
             $constraints = [@constraints];
         }
-        if ($_ =~ /\s+L:(\S+)/ || ($_ =~ /^L:(\S+)/)) {                    #L:0-12
+        if ($_ =~ /\s+L:(\S+)/ || ($_ =~ /^L:(\S+)/)) {                    #Ligand atoms (L:14-26)
             my @temp = map { $_ - 1 } split(/-/, $1);
             $ligand = [$temp[0]..$temp[1]];
         }
-        if ($_ =~ /\s+C:(\S+)/ || ($_ =~ /^C:(\S+)/)) {
+        if ($_ =~ /\s+C:(\S+)/ || ($_ =~ /^C:(\S+)/)) {			   #Reaction Center (C:13)
             $center = $1 - 1;
         }
-        if ($_ =~ /\s+K:(\S+)/ || ($_ =~ /^K:(\S+)/)) {
+        if ($_ =~ /\s+K:(\S+)/ || ($_ =~ /^K:(\S+)/)) {			   #Key atoms (K:14,15)
             my @temp = split (/;/, $1);
             my @key_atoms;
             while (@temp) {
@@ -91,7 +91,7 @@ sub grab_coords {
             }
             $key_atoms = [@key_atoms];
         }
-        if ($_ =~ /\s+B:(\S+)/ || ($_ =~ /^B:(\S+)/)) {
+        if ($_ =~ /\s+B:(\S+)/ || ($_ =~ /^B:(\S+)/)) {			    #Not sure! (B:1-2;3-4)
             my @temp = split (/;/, $1);
             my @bonds;
             while (@temp) {
@@ -102,7 +102,7 @@ sub grab_coords {
             }
             $bonds = [@bonds];
         }
-        if ($_ =~ /\s+CF:(\S+)/ || ($_ =~ /^CF:(\S+)/)) {
+        if ($_ =~ /\s+CF:(\S+)/ || ($_ =~ /^CF:(\S+)/)) {		    #Conformer information (CF:XXX)
             $conformer = [split (/,/, $1)];
         }
 

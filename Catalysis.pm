@@ -75,6 +75,7 @@ sub detect_component {
     my $self = shift;
 
     my $TM;
+	#Need to modify to account for TM in the ligand itself!
     for my $atomi (0..$#{ $self->{elements} }) {
         if (exists $TMETAL->{$self->{elements}->[$atomi]}) {
             $TM = $atomi;
