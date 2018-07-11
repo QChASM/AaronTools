@@ -1,8 +1,31 @@
-S-Quinox-tBu3
-R-Quinox-tBu3
-SS-QuinoxP = (S,S)-QuinoxP* from DOI: 10.1038/s41467-018-04693-9
-RR-QuinoxP = (R,R)-QuinoxP* from DOI: 10.1038/s41467-018-04693-9
-R-Quinox-AdtBu2 = (R)-Quinox-AdtBu2 from DOI: 10.1038/s41467-018-04693-9
-S-Quinox-AdtBu2 = (S)-Quinox-AdtBu2 from DOI: 10.1038/s41467-018-04693-9
+==Achiral ligands==
+BPE = 
+DHPE
 Cp = cyclopentadiene
 Cp_star = pentamethylcyclopentadiene
+
+==Chiral ligands==
+S-Quinox-tBu3
+R-Quinox-tBu3
+SS-QuinoxP = (S,S)-QuinoxP* 		(from DOI: 10.1038/s41467-018-04693-9)
+RR-QuinoxP = (R,R)-QuinoxP* 		(from DOI: 10.1038/s41467-018-04693-9)
+R-Quinox-AdtBu2 = (R)-Quinox-AdtBu2 	(from DOI: 10.1038/s41467-018-04693-9)
+S-Quinox-AdtBu2 = (S)-Quinox-AdtBu2 	(from DOI: 10.1038/s41467-018-04693-9)
+BiOx_Me
+BiOx
+dithiolate-4F
+Paton_DL
+Paton_EL
+PymdOx-L2
+PymdOx-L3
+PymdOx
+PyrOx
+RR-Me-BPE = (R,R)-Me-BPE
+SS-Me-BPE = (S,S)-Me-BPE
+R-SEGPHOS = (R)-SEGPHOS
+S-SEGPHOS = (S)-SEGPHOS
+
+==Organocatalysts==
+S-bi-isoquinoline-NN-dioxide = (S)-biisoquinoline-N,N'-dioxide
+squaramide-iPr
+squaramide
