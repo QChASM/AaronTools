@@ -330,7 +330,7 @@ sub copy {
     $new->{substrate} = $self->{substrate}->copy();
 
     $new->{ligand_atoms} = [@{ $self->{ligand_atoms} }];
-    $new->{center_atom} = $self->{center_atom};
+    $new->{center_atom} = $self->{center_atom} if $self->{center_atom};
     $new->{substrate_atoms} = [@{ $self->{substrate_atoms} }];
 
     $new->{ligand_keyatoms} = [map { [@$_] } @{ $self->{ligand_keyatoms} }];
@@ -424,7 +424,7 @@ sub _update_geometry {
         [ @{$self->{coords}}[@{ $self->{substrate_atoms} }] ];
 
     $self->center()->{coords} =
-        [ ${$self->{coords}}[$self->{center_atom}] ];
+        [ ${$self->{coords}}[$self->{center_atom}] ] if $self->center();
 
     $self->ligand()->{coords} =
         [ @{$self->{coords}}[@{ $self->{ligand_atoms} }] ];
@@ -440,7 +440,7 @@ sub freeze_all_atoms {
 
     $self->substrate()->freeze_all_atoms();
     $self->ligand()->freeze_all_atoms();
-    $self->center()->{flags} = [-1];
+    $self->center()->{flags} = [-1] if $self->center();
 
     $self->{flags} = [ map { -1 } @{ $self->{flags} } ];
 }
@@ -1535,7 +1535,6 @@ sub __detect_substituent {
                                                            end => $end );
             $self->{substituents}->{$sub_target}->{sub} = $to_sub;
 
-            last;
         }
     }
 
