@@ -1581,7 +1581,7 @@ sub XYZ {
     my $return = '';
     $return = sprintf "$num_atoms\n$comment\n";
     foreach my $atom (0..$#{ $self->{elements} }) {
-       $return .= sprintf "%2s%14.6f%14.6f%14.6f\n", ($self->{elements}->[$atom], @{ $self->{coords}->[$atom] });
+       $return .= sprintf "%s%14.6f%14.6f%14.6f\n", ($self->{elements}->[$atom], @{ $self->{coords}->[$atom] });
     }
     return $return;
 }
