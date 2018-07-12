@@ -354,6 +354,9 @@ sub refresh_connected {
   foreach my $atom1 (@$subgroups) {
     my @row;
     foreach my $atom2 (@$subgroups) {
+		unless (defined $self->{coords}->[$atom2]){
+			print Dumper($self);
+		}
       my $distance = $self->distance(atom1 => $atom1, atom2 => $atom2);
 
       my $cutoff = $radii->{$self->{elements}->[$atom1]} +
@@ -473,11 +476,11 @@ sub compare_connectivity {
          my %con1 = map {$_ => 1} @{ $self->{connection}->[$atom] };
          my %con2 = map {$_ => 1} @{ $geo_ref->{connection}->[$atom] };
 
-         my @broken_atoms = grep { !$con1{$_} && 
-            (abs($self->distance(atom1=>$atom, atom2=>$_) - 
+         my @broken_atoms = grep { !$con1{$_} &&
+            (abs($self->distance(atom1=>$atom, atom2=>$_) -
                 $geo_ref->distance(atom1=>$atom, atom2=>$_)) > $thres) } keys %con2;
          my @formed_atoms = grep { !$con2{$_} &&
-            (abs($self->distance(atom1=>$atom, atom2=>$_) - 
+            (abs($self->distance(atom1=>$atom, atom2=>$_) -
                 $geo_ref->distance(atom1=>$atom, atom2=>$_)) > $thres)} keys %con1;
 
          my @broken_bonds = map { join('-', sort($atom, $_)) } @broken_atoms;

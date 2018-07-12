@@ -1451,20 +1451,21 @@ sub _rearrange_active_con {
         }
     }
 
-    if ($self->{substituents}) {
-        for my $key (sort {$a <=> $b} keys %{ $self->{substituents} }) {
-            if (exists $old_new->{$self->{substituents}->{$key}->{end}} &&
-                ($old_new->{$self->{substituents}->{$key}->{end}} !=
-                $self->{substituents}->{$key}->{end})) {
-                $self->{substituents}->{$key}->{end} = $old_new->{$self->{substituents}->{$key}->{end}};
-            }
-            if (exists $old_new->{$key} &&
-                ($old_new->{$key} != $key)) {
-                $self->{substituents}->{$old_new->{$key}} = $self->{substituents}->{$key};
-                delete $self->{substituents}->{$key};
-            }
-        }
-    }
+	if ($self->{substituents}) {
+		for my $key (sort {$a <=> $b} keys %{ $self->{substituents} }) {
+			if ( exists $old_new->{$self->{substituents}->{$key}} ){
+				if ($old_new->{$self->{substituents}->{$key}->{end}}
+						!= $self->{substituents}->{$key}->{end}) {
+					$self->{substituents}->{$key}->{end} = $old_new->{$self->{substituents}->{$key}->{end}};
+				}
+			}
+			if (exists $old_new->{$key} &&
+				($old_new->{$key} != $key)) {
+				$self->{substituents}->{$old_new->{$key}} = $self->{substituents}->{$key};
+				delete $self->{substituents}->{$key};
+			}
+		}
+	}
 
     if ($self->{active_centers}) {
         for my $i (0..$#{ $self->{active_centers} }) {

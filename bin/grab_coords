@@ -3,7 +3,7 @@
 use strict;
 use lib $ENV{'QCHASM'};
 
-use Getopt::Long;
+use Getopt::Long
 use Pod::Usage;
 use AaronTools::Geometry;
 
