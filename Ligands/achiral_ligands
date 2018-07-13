@@ -1,0 +1,26 @@
+BPE	XXX
+DHPE	XXX
+Cp_star	pentamethylcyclopentadiene
+Cp	cyclopentadiene
+DPPP	1,3-Bis(diphenylphosphino)propane
+DPPE	1,2-Bis(diphenylphosphino)ethane
+DPPF	1,1'-Ferrocenediyl-bis(diphenylphosphine)
+DMP	1,10-dimethyl phenanthroline
+COD	cyclooctadiene
+BYP	bipyridine
+PhBP3	PhBP3	(from DOI: 10.1021/ja026433e)
+tBu-PCP		tetra(t-butyl)-2,6-bis(diphosphino)benzene	(from	DOI:	10.1126/science.1200514)
+tBu-PNP		tetra(t-butyl)-2,6-bis(diphosphino)pyridine	(from DOI: 10.1021/ic901032c)
+iPr-NC3C	2,3-di(bisisopropylamino) cyclopropyl carbene	('8' from DOI: 10.1021/ja202007s)
+Mes-NC5C	(N,N')-bis(mesityl) imidazolidinyl carbene	('6a' from DOI: 10.1021/ja202007s)
+iPrPh-NC5C	(N,N')-bis(2,6-diisopropylphenyl) imidazolidinyl carbene	('6b' from DOI: 10.1021/ja202007s)
+Mes-HC5C	(N,N')-bis(mesityl) dihydroimidazolyl carbene	('5b' from DOI: 10.1021/ja202007s)
+Ad-HC5C		(N,N')-bis(adamantyl) dihydroimidazolyl	carbene	('5c' from DOI: 10.1021/ja202007s)
+iPrPh-BIP	(N,N')-bis(2,6-diisoproylphenyl)imino pyridine	(from DOI: 10.1039/b107490c)
+EDA	ethylene diamine
+Milstein	Milstein catalyst	(from DOI: 10.1021/acscatal.7b01791)
+PHNNP	amine(imine)diphosphine	(from DOI: 10.1021/om500479q)
+CO	carbonmonoxide
+iPr-PNP2	{bis[2-(diisopropylphosphinomethyl)ethyl]amino}ethyl]amine	(from DOI: 10.1021/ja504034q)
+AcAce	acetyl acetone
+Xphos	2-Dicyclohexylphosphino-2',4',6'-triisopropylbiphenyl
