@@ -2094,7 +2094,7 @@ sub _map_remote {
             }else {
                 $keepgoing = 0;
                 if ($minRMSD > 0.4) {
-                    print "Mapping may have failed";
+                    print "Mapping may have failed\n";
                 }
             }
 
