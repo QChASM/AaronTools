@@ -19,6 +19,13 @@ my $debug;
 sub main {
     my $file = shift;
     my %opt  = @_;
+    my $HOME = $ENV{'HOME'};
+
+    #Check to make sure $HOME/Aaron_libs/Ligands exists. Make it if it doesn't.
+    if (! -f "$HOME/Aaron_libs/Ligands") {
+        print "Making $HOME/Aaron_libs/Ligands\n";
+        system('mkdir -p $HOME/Aaron_libs/Ligands');
+    }
 
     if ( $opt{name} ) {
         if ( $opt{name} =~ /\/?(.*\/)+.*/ ) {
@@ -27,11 +34,10 @@ sub main {
         if ( $opt{name} =~ /.*\.xyz/ ) {
             $opt{name} =~ s/(.*)\.xyz/$1/;
         }
-        $opt{name} =
-          $ENV{'HOME'} . "/Aaron_libs/Ligands/" . $opt{name} . ".xyz";
+        $opt{name} = $HOME . "/Aaron_libs/Ligands/" . $opt{name} . ".xyz";
         if ( -e $opt{name} ) {
             die
-              "Ligand of the same name already in your AaronTools library. Please choose a different name or delete it.\nFile already exists at: $opt{name}\n";
+              "Ligand of the same name already in your AaronTools library. Please choose a different name or delete the old one.\nFile already exists at: $opt{name}\n";
         }
     }
 
