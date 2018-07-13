@@ -7,7 +7,8 @@ DPPE	1,2-Bis(diphenylphosphino)ethane
 DPPF	1,1&prime;-Ferrocenediyl-bis(diphenylphosphine)
 DMP	1,10-dimethyl phenanthroline
 COD	cyclooctadiene
-BYP	bipyridine
+bpy	2,2&prime;-bipyridine
+dmb	4,4&prime;-dimethyl-2,2&prime;-bipyridine
 PhBP3	PhBP3	(from DOI: 10.1021/ja026433e)
 tBu-PCP		tetra(t-butyl)-2,6-bis(diphosphino)benzene	(from	DOI:	10.1126/science.1200514)
 tBu-PNP		tetra(t-butyl)-2,6-bis(diphosphino)pyridine	(from DOI: 10.1021/ic901032c)
