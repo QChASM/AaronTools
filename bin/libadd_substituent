@@ -27,6 +27,8 @@ sub main {
         system('mkdir -p $HOME/Aaron_libs/Subs');
     }
 
+	# If no name provided, print to STDOUT
+	# Otherwise, prepend the appropriate library
     if ( $opt{name} ) {
         if ( $opt{name} =~ /\/?(.*\/)+.*/ ) {
             $opt{name} = _utils::strip_dir( $opt{name} );
@@ -79,6 +81,8 @@ sub main {
 
     # generate comment line with conformer info
     # TODO: Determine number of conformers and rotation angle based on symmetry
+	$opt{confs}->[0] = 1 unless ($opt{confs}->[0]);
+	$opt{confs}->[1] = 0 unless ($opt{confs}->[1]);
     my $comment = "CF:@{$opt{confs}}[0],@{$opt{confs}}[1]";
     $new_geom->printXYZ( $opt{name}, $comment, 1 );
 }
