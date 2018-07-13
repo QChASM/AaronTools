@@ -98,6 +98,11 @@ GetOptions( 'help|h'            => \$opt{help},
     } );
 pod2usage(0) if $opt{help};
 
+if ( $opt{available} ){
+	_utils::get_available_subs();
+	exit;
+}
+
 # need to supply a geometry file
 pod2usage(
     { -message => "Please provide one geometry file to substitute",
@@ -107,11 +112,7 @@ pod2usage(
 
 # target supplied as 1-indexed, Aaron uses 0-indexing
 
-if ( $opt{available} ) {
-    _utils::get_available_subs();
-} else {
-    &main( $ARGV[0], %opt );
-}
+&main( $ARGV[0], %opt );
 
 =pod
 
@@ -125,7 +126,7 @@ cat_substitute [options] [-l|s target=sub ...] file
 
 =item B<-a>, B<--available>
 
-List available substituents
+List available substituents and exit
 
 =item B<-l target=sub>, B<--ligand target=sub>
 
