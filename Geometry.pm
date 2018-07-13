@@ -899,7 +899,7 @@ sub _substitute {
     $end -= grep { $_ < $end } @$delete_atoms;
 
     #modify the constraint, since the deleted atoms can change atom numbers
-    $self->_rearrange_con_sub( delete_atoms => $delete_atoms);
+    $self->_rearrange_con_sub($delete_atoms);
 
     $self->delete_atom($delete_atoms);
     $self->refresh_connected();
