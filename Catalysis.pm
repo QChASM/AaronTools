@@ -2166,16 +2166,26 @@ sub detect_backbone_subs {
     my $self = shift;
     my @sub_atoms;
 
+    my %constraints;
+
+    for my $constraint (@{ $self->{constraints} }) {
+        for my $i (0,1) {
+            if ($constraint->[0]->[$i] =~ /^\d+$/) {
+                $constraints{$constraint->[0]->[$i]} = 1;
+            }
+        }
+    } 
+
     for my $target ( sort { $a <=> $b } keys %{ $self->{substituents} } ) {
 
         my $nearst = $self->{substituents}->{$target}->{end};
         my $groups = $nearst ?
                      $self->get_all_connected($target, $nearst) : '';
-
         unless ($nearst && $groups) {
             my $min = 999;
             for my $near (@{ $self->{connection}->[$target] }) {
                 my $connected = $self->get_all_connected($target, $near);
+                next if (grep {exists $constraints{$_}} @$connected);
                 if ($#{ $connected } < $min) {
                     $min = $#{ $connected };
                     $nearst = $near;
