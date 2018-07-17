@@ -29,8 +29,8 @@ my %opt;
 $opt{help}   = '';
 $opt{output} = '';
 GetOptions( 'help|h'            => \$opt{help},
-            'output-force|of:s' => \$opt{force},
-            'output|o:s'        => \$opt{output} )
+            'output-force|of=s' => \$opt{force},
+            'output|o=s'        => \$opt{output} )
   or pod2usage(
     { -exitval => 1,
       -verbose => 1
@@ -53,7 +53,7 @@ if ( $opt{force} ) {
 
 =head1 SYNOPSIS
 
-grab_coords [-o outfile.xyz] filename
+grab_coords [-o[f] outfile.xyz] filename
 
 =head1 OPTIONS
 

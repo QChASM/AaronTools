@@ -12,78 +12,92 @@ unshift @INC, ("$ENV{'QCHASM'}/AaronTools/bin");
 require _utils;
 
 sub main {
-    my $files = shift;
-    my %opt   = @_;
+    my $file = shift;
+    my %opt  = @_;
+    my %subs;
 
-    foreach my $file ( @{$files} ) {
-        my $geom = _utils::get_geom($file);
-        next unless $geom;
+    my $geom = _utils::get_geom($file);
+    next unless $geom;
 
-        # perform substitute for each substituent
-        foreach my $target ( keys %{ $opt{subs} } ) {
-
-            # target supplied as 1-indexed, Aaron uses 0-indexing
-            $geom->substitute( 'target'           => $target - 1,
-                               'sub'              => $opt{subs}{$target},
-                               'minimize_torsion' => $opt{minimize_torsion} );
-
+    foreach my $target ( keys %{ $opt{subs} } ) {
+        foreach my $k ( split /,/, $target ) {
+            $subs{$k} = $opt{subs}{$target};
         }
-
-        # Printing
-        # make comment something useful
-        my $comment = _utils::strip_dir($file);
-        my $tmp     = [];
-        foreach my $key ( keys %{ $opt{subs} } ) {
-            push @{$tmp}, $key;
-            push @{$tmp}, $opt{subs}{$key};
-            $comment .= " " . $key . "=>" . $opt{subs}{$key};
-        }
-
-        # $outfile will be empty string if write to file not requested
-        my $outfile = _utils::get_outfile( $file, $opt{write}, $tmp );
-
-        # prints to STDOUT if $outfile == ''
-        print("Saving substituted coords to $outfile\n") if $outfile;
-        $geom->printXYZ( $outfile, $comment );
     }
+
+    # perform substitute for each substituent
+    foreach my $target ( keys %subs ) {
+        # target supplied as 1-indexed, Aaron uses 0-indexing
+        $geom->substitute( 'target'           => $target - 1,
+                           'sub'              => $subs{$target},
+                           'minimize_torsion' => $opt{minimize_torsion} );
+
+    }
+
+    # Printing
+    # make comment something useful
+    my $comment = _utils::strip_dir($file);
+    my $tmp     = [];
+    foreach my $key ( keys %{ $opt{subs} } ) {
+        push @{$tmp}, $key;
+        push @{$tmp}, $opt{subs}{$key};
+        $comment .= " " . $key . "=>" . $opt{subs}{$key};
+    }
+
+    # $outfile will be empty string if write to file not requested
+    my $outfile;
+    unless ( $opt{force} ) {
+        $outfile = _utils::handle_overwrite( $opt{output} );
+    } else {
+        $outfile = $opt{output};
+    }
+
+    # prints to STDOUT if $outfile == ''
+    print("Saving substituted coords to $outfile\n") if $outfile;
+    $geom->printXYZ( $outfile, $comment, 1 );
 }
 
 # read in options
 my %opt;
 my %sublist;
-$opt{help}        = '';
-$opt{subs}        = \%sublist;
-$opt{min_torsion} = '';
-$opt{write} = '-';    # '-' indicates no write, '' indicates write to cwd
-GetOptions( 'help|h'       => \$opt{help},
-            'available|a'  => \$opt{available},
-            'sub|s=s%{1,}' => \%sublist,
-            'minimize|m'   => \$opt{minimize_torsion},
-            'write|w:s'    => \$opt{write} )
+$opt{help}   = '';
+$opt{subs}   = \%sublist;
+$opt{output} = '';
+GetOptions( 'help|h'            => \$opt{help},
+            'available|a'       => \$opt{available},
+            'sub|s=s%{1,}'      => \%sublist,
+            'minimize|m'        => \$opt{minimize_torsion},
+            'output|o=s'        => \$opt{output},
+            'output-force|of=s' => \$opt{force} )
   or pod2usage(
-                { -exitval => 1,
-                  -verbose => 1
-                } );
+    { -exitval => 1,
+      -verbose => 1
+    } );
 
 pod2usage(0) if $opt{help};
 if ( $opt{available} ) {
     _utils::get_available_subs();
-	exit;
+    exit;
 }
 
 pod2usage(
-           { -message =>
-               "Please provide at least one target atom and substituent pair",
-             -exitval => 1,
-             -verbose => 1
-           } ) if ( keys(%sublist) < 1 );
+    {  -message =>
+         "Please provide at least one target atom and substituent pair",
+       -exitval => 1,
+       -verbose => 1
+    } ) if ( keys(%sublist) < 1 );
 pod2usage(
-           { -message => "Please provide a geometry file",
-             -exitval => 1,
-             -verbose => 1
-           } ) if ( @ARGV < 1 );
+    { -message => "Please provide a geometry file",
+      -exitval => 1,
+      -verbose => 1
+    } ) if ( @ARGV < 1 );
 
-&main( \@ARGV, %opt );
+if ( $opt{force} ) {
+    $opt{output} = $opt{force};
+    $opt{force}  = 1;
+}
+
+&main( $ARGV[0], %opt );
 
 =pod
 
@@ -107,10 +121,9 @@ Location of substituent (1-indexed) and requested substituent using key=value no
 
 Rotate new substituent to minimize LJ potential
 
-=item B<-w [directory]>, B<--write [directory]>
+=item B<-o[f] outfile>, B<--output[-force] outfile>
 
-Write new geometry output to INFILE-NAME_TARGET-ATOM_SUB-NAME.xyz instead of STDOUT.
-Directory defaults to current working directory.
+Only available if one geometry file is provided, otherwise use the B<--write> flag. Save the new geometry to <outfile>. Optionally, force overwrite if <outfile> already exists.
 
 =item B<-h>, B<--help>
 
