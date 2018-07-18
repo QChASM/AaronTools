@@ -745,7 +745,7 @@ sub change_dihedral {
     my $connected_atoms = $self->get_all_connected($atom1, $atom2);
 
     if ($#{ $connected_atoms } < 0) {
-        print "Cannot change this dihedral angle...\n";
+        print {*STDERR} "Cannot change this dihedral angle...\n";
         return 0;
     }
 
@@ -937,20 +937,20 @@ sub fused_ring {
   my @connected = @{ $self->{connection} };
   if($#{$self->{connection}->[$target1]} > 0
      || $#{$self->{connection}->[$target2]} > 0) {
-    print "Trying to substitute non-monovalent atom!\n";
+    print {*STDERR} "Trying to substitute non-monovalent atom!\n";
     return 0;
   }
 
   #Figure out what needs to be added to match fused ring
   my $path_length = $self->shortest_path($target1, $target2);
   if($path_length < 3 || $path_length > 5) {
-    print "Can't figure out how to build fused ring connecting those two atoms...\n";
+    print {*STDERR} "Can't figure out how to build fused ring connecting those two atoms...\n";
     return 0;
   }
   #check to make sure known type
   if($type !~ /a_pinene/ && $type !~ /LD_chair/ && $type !~ /LU_chair/
      && $type !~ /D_boat/ && $type !~ /U_boat/ && $type !~ /Ar/) {
-    print "Unknown ring type!\n";
+    print {*STDERR} "Unknown ring type!\n";
     return 0;
   }
 
@@ -962,7 +962,7 @@ sub fused_ring {
   }
   else {	#Chairs
     if($path_length != 3) {
-      print "Can't figure out how to build fused ring connecting those two atoms...\n";
+      print {*STDERR} "Can't figure out how to build fused ring connecting those two atoms...\n";
       return 0;
     } else {
       $ring = new AaronTools::Geometry( name => 'Chairs' );
@@ -2004,13 +2004,13 @@ sub compare_lib {
 
     my @subs = keys %{ $subs };
     if ($#subs < 0) {
-        print "Cannot determine the type of substituent, so no conformer information retrieved.\n";
+        print {*STDERR} "Cannot determine the type of substituent, so no conformer information retrieved.\n";
     }elsif ($#subs == 0) {
        $self->{name} = $subs[0];
        $self->{conformer_num} = $subs->{$subs[0]}->{conformer_num};
        $self->{conformer_angle} = $subs->{$subs[0]}->{conformer_angle};
     }else {
-       print "Multiple similar substituents were found, but cannot tell which one it is (No conformer information): \n";
+       print {*STDERR} "Multiple similar substituents were found, but cannot tell which one it is (No conformer information): \n";
        print "@subs\n";
     }
 }

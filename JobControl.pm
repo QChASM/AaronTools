@@ -24,7 +24,7 @@ sub findJob {
 
     #Strip leading directories off of $Path, to deal with different ways $HOME is treated
     $Path =~ s/^\S+$ENV{USER}//;
-    
+
     my @jobIDs;
 
     if($queue_type =~ /LSF/i) {				#LSF queue
@@ -44,10 +44,10 @@ sub findJob {
         }
     }elsif ($queue_type =~ /PBS/i) {				#PBS (default)
         my $qstat = `qstat -fx`;
-    
+
         #First grab all jobs
         my @jobs = ($qstat =~ m/<Job>(.+?)<\/Job>/g);
-    
+
         #Grab jobIDs for all jobs matching $Path
         foreach my $job (@jobs) {
         	if ($job =~ m/<Job_Id>(\d+)\S+PBS_O_WORKDIR=\S+$Path</) {
@@ -63,7 +63,7 @@ sub findJob {
             }
         }
     }
-    
+
     if(@jobIDs) {
     	return @jobIDs;
     }
@@ -89,14 +89,14 @@ sub killJob {
 sub submit_job {
     my %params = @_;
 
-    my ($dir, $com_file, $walltime, 
-        $numprocs, $template_job, $node) = ( $params{directory}, 
+    my ($dir, $com_file, $walltime,
+        $numprocs, $template_job, $node) = ( $params{directory},
                                              $params{com_file},
                                              $params{walltime},
                                              $params{numprocs},
                                              $params{template_job},
                                              $params{node} );
-    
+
     chomp(my $jobname=`basename $com_file .com`);
     my $jobfile = $dir ? "$dir/$jobname.job" : "$jobname.job";
 
@@ -147,19 +147,19 @@ sub submit_job {
         chdir($dir);
         if($queue_type =~ /LSF/i) {
             if(system("bsub < $jobname.job >& /dev/null")) {
-                print "Submission denied for $jobname.job!\n";
+                print {*STDERR} "Submission denied for $jobname.job!\n";
                 $failed = 1;
             }
 #Note: sbatch does not seem to return error codes for failed submissions
         } elsif($queue_type =~ /Slurm/i) {
             my $output = `sbatch < $jobname.job 2>&1`;
-            if($output =~ /error/i) { 
-		print "Submission denied for $jobname.job!\n";
+            if($output =~ /error/i) {
+		print {*STDERR} "Submission denied for $jobname.job!\n";
                 $failed = 1;
             }
         } elsif($queue_type =~ /PBS/i) {
-            if(system("qsub $jobname.job >& /dev/null")) { 
-		print "Submission denied for $jobname.job!\n";
+            if(system("qsub $jobname.job >& /dev/null")) {
+		print {*STDERR} "Submission denied for $jobname.job!\n";
                 $failed = 1;
             }
         }
@@ -173,14 +173,14 @@ sub count_time {
     my ($sleep_time) = @_;
 
     my $time = localtime;
-    
+
     my $sleep_hour = int($sleep_time/60);
     my $sleep_minute = $sleep_time%60;
 
     if ($time =~ /\s(\d+)\:(\d+)/) {
         my $hour = $1 + $sleep_hour;
         my $minute = $2 + $sleep_minute;
-        
+
         if ($minute > 60) {
             $hour += 1;
             $minute += $minute%60;
@@ -196,7 +196,7 @@ sub count_time {
 sub call_g09 {
     my %params = @_;
 
-    my ($com_file, $walltime, 
+    my ($com_file, $walltime,
         $numprocs, $template_job,
         $node) = ($params{com_file}, $params{walltime}, $params{numprocs},
                   $params{template_job}, $params{node});
@@ -209,7 +209,7 @@ sub call_g09 {
     unless (-e $shellfile) {
 
         open SHELL, ">$shellfile";
-        
+
         my $template_pattern = TEMPLATE_JOB;
 
         my @job_command = @{$template_job->{command}};
@@ -278,7 +278,7 @@ sub get_job_template {
                                /\Q$_\E/} values %$template_pattern;
 
                         unless (@pattern) {
-                           print "template.job in $QCHASM/AaronTools is invalid. " .
+                           print {*STDERR} "template.job in $QCHASM/AaronTools is invalid. " .
                                  "Formula expression is wrong. " .
                                  "Please see manual.\n";
                            $job_invalid = 1;
@@ -303,8 +303,8 @@ sub get_job_template {
 
 
 
-  
-    
+
+
 
 
 

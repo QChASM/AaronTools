@@ -22,6 +22,7 @@ my $CENTER = NAMES->{CENTER};
 
 package AaronTools::Catalysis;
 use strict; use warnings;
+use experimental 'smartmatch';
 use Math::Trig;
 use Math::Vector::Real;
 use Math::MatrixReal;
@@ -97,7 +98,7 @@ sub detect_component {
                 $self->{center_atom} = $TM;
                 $self->{substrate_atoms} = [0..$TM-1];
             }else {
-                print "No transition metal was found in the geometry. ".
+                print {*STDERR} "No transition metal was found in the geometry. ".
                       "Catalysis object is determined to be purely organic. " .
                       "If this is a Si, P or other non-metal atom centered ".
                       "system, please specify that in the .xyz file.\n";
@@ -1202,6 +1203,7 @@ sub remove_clash {
 
 package AaronTools::Component;
 use strict; use warnings;
+use experimental 'smartmatch';
 use Math::Trig;
 use Math::Vector::Real;
 use Data::Dumper;
@@ -1723,6 +1725,7 @@ sub part_LJ_energy {
 
 package AaronTools::Ligand;
 use strict; use warnings;
+use experimental 'smartmatch';
 use Math::Trig;
 use Math::Vector::Real;
 use Data::Dumper;
@@ -2094,7 +2097,7 @@ sub _map_remote {
             }else {
                 $keepgoing = 0;
                 if ($minRMSD > 0.4) {
-                    print "Mapping may have failed\n";
+                    print {*STDERR} "Mapping may have failed\n";
                 }
             }
 
@@ -2174,7 +2177,7 @@ sub detect_backbone_subs {
                 $constraints{$constraint->[0]->[$i]} = 1;
             }
         }
-    } 
+    }
 
     for my $target ( sort { $a <=> $b } keys %{ $self->{substituents} } ) {
 

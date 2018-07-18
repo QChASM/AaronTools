@@ -61,7 +61,7 @@ sub new {
     my $T;
 
     my $hpmodes = 0;
-    
+
     my $Elec_zpve;
     my $enthalpy;
     my $G;
@@ -179,7 +179,7 @@ sub new {
         /Rotational symmetry number\s+(\d+)/ && do {
             $sigmar = $1;
         };
-    
+
         #Gradient
         /Threshold  Converged/ && do {
             while (<INFILE>) {
@@ -210,7 +210,7 @@ sub new {
                 };
             }
         };
-       
+
         (my $temp) = grep { $line =~ /$_/ } keys %errors;
         $error = $errors{$temp} if $temp;
         $error_msg = $line if $temp;
@@ -313,7 +313,7 @@ sub gradient {
     if ($self->{gradient}) {
         my $ref = $self->{gradient};
 
-        my @gradient = map { "$ref->{$_}->{value}/$ref->{$_}->{converged}" } 
+        my @gradient = map { "$ref->{$_}->{value}/$ref->{$_}->{converged}" }
                             keys %{ $ref };
 
         $gradient = join(", ", @gradient);
@@ -338,7 +338,7 @@ sub enthalpy {
     if ($self->{enthalpy}) {
         return $self->{enthalpy};
     }else {
-        print "No enthalpy found\n";
+        print {*STDERR} "No enthalpy found\n";
     }
 }
 
@@ -349,7 +349,7 @@ sub free_energy {
     if ($self->{free_energy}) {
         return $self->{free_energy};
     }else {
-        print "No free energy found\n";
+        print {*STDERR} "No free energy found\n";
     }
 }
 
@@ -362,7 +362,7 @@ sub Grimme_G {
     my $v0 = 100;           #cutoff for quasi rrho
 
     if (!$self->frequency()) {
-        print "Cannot calculate the Grimme free energy without vibrational frequencies\n";
+        print {*STDERR} "Cannot calculate the Grimme free energy without vibrational frequencies\n";
     }
     my $rottemps = $self->{rotational_temperature};
 
@@ -393,7 +393,7 @@ sub Grimme_G {
     my ($Ev, $Sv_quasiRRHO) = (0, 0, 0);
 
     for my $i (0..$#freqs) {
-        my $Sv_temp = $vibtemps[$i]/($T*(exp($vibtemps[$i]/$T)-1)) - 
+        my $Sv_temp = $vibtemps[$i]/($T*(exp($vibtemps[$i]/$T)-1)) -
                       log(1-exp(-$vibtemps[$i]/$T));
         $Ev += $vibtemps[$i]*(1/2 + 1/(exp($vibtemps[$i]/$T) - 1));
 
@@ -411,7 +411,7 @@ sub Grimme_G {
 
     my @a = ($St, $Sr, $Sv_quasiRRHO, $Se);
 
-    my $Hcorr = $Et + $Er + $Ev + $R*$T; 
+    my $Hcorr = $Et + $Er + $Ev + $R*$T;
     my $Stot_quasiRRHO = $St + $Sr + $Sv_quasiRRHO + $Se;
     my $Gcorr_quasiRRHO = $Hcorr - $T*$Stot_quasiRRHO;
     $Gcorr_quasiRRHO /= $hart2kcal * 1000;
@@ -429,7 +429,7 @@ sub bond_change {
 
     my $n=$#{$self->{opts}};
     for (my $i=$#{$self->{opts}}; $i>=0; $i--) {
-        my $d = $d_ref - 
+        my $d = $d_ref -
             $self->{opts}->[$i]->distance(atom1=>$bond->[0], atom2=>$bond->[1]);
         if (abs($d) < 0.25) {
             $n = $i;
@@ -460,7 +460,7 @@ sub new {
     if ($hpmodes && (@num_head == 2)) {
         @input = @input[0..$num_head[1] - 1];
     }elsif ($hpmodes) {
-        print "The .log file is damaged, cannot get frequencies\n";
+        print {*STDERR} "The .log file is damaged, cannot get frequencies\n";
         return;
     }
 
@@ -474,7 +474,7 @@ sub new {
         my $line = shift @input;
 
         if ($line =~ /Frequencies/) {
-            
+
             $line =~ s/^\s+//;
 
             my @patterns = split(/\s+/, $line);
@@ -507,10 +507,10 @@ sub new {
             $vectors_block = [];
             next;
         }
-        
+
         #vectors
         if ($hpmodes) {
-            if ($line =~ 
+            if ($line =~
                 /\s+(\d+)\s+(\d+)\s+\d+\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/) {
 
                 my @moves = ($3, $4, $5, $6, $7);
@@ -541,7 +541,7 @@ sub new {
                         $vectors_block->[$i]->[$atom-1]->[$xyz] = $moves->[$i]->[$xyz];
                     }
                 }
-                
+
                 if ($atom == $num_atoms) {
                     push (@vectors, map { [map { [@$_] } @$_] } @$vectors_block);
                 }
@@ -550,7 +550,7 @@ sub new {
         }
     }
 
-    my $self = { 
+    my $self = {
         frequencies => [@frequencies],
         intensities => [@intensities],
             vectors => [@vectors],
@@ -560,7 +560,7 @@ sub new {
 
     return $self;
 }
-        
+
 
 sub frequencies {
     my $self = shift;
@@ -650,7 +650,7 @@ sub is_TS {
 
 
 
-    
+
 
 
 
