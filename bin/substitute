@@ -64,25 +64,26 @@ GetOptions( 'help|h'       => \$opt{help},
                 { -exitval => 1,
                   -verbose => 1
                 } );
+
 pod2usage(0) if $opt{help};
+if ( $opt{available} ) {
+    _utils::get_available_subs();
+	exit;
+}
 
 pod2usage(
            { -message =>
                "Please provide at least one target atom and substituent pair",
              -exitval => 1,
              -verbose => 1
-           } ) if ( keys(%sublist) < 1 && !$opt{available} );
+           } ) if ( keys(%sublist) < 1 );
 pod2usage(
            { -message => "Please provide a geometry file",
              -exitval => 1,
              -verbose => 1
-           } ) if ( @ARGV < 1 && !$opt{available} );
+           } ) if ( @ARGV < 1 );
 
-if ( $opt{available} ) {
-    _utils::get_available_subs();
-} else {
-    &main( \@ARGV, %opt );
-}
+&main( \@ARGV, %opt );
 
 =pod
 
@@ -96,7 +97,7 @@ substitute [options] -s atom1=sub1 [atom2=sub2 ...] file [file2 ...]
 
 =item B<-a>, B<--available>
 
-List available substituent names
+List available substituent names and exit
 
 =item B<-s atom=sub>, B<--sub atom=sub>
 
