@@ -16,9 +16,7 @@ sub main {
     my %opt  = @_;
 
     my $geom = _utils::get_geom($file);
-    unless ($geom) {
-        return 1;
-    }
+    return 1 unless ($geom);
 
     if ( @{ $opt{print} } ) {
         &print_dihedral( $geom, $opt{rads}, @{ $opt{print} } );
@@ -32,9 +30,13 @@ sub main {
 
     #prints to STDOUT  if $opt{output} == '' or saves to file
     if ( @{ $opt{set} } or @{ $opt{change} } ) {
-        $opt{output} = _utils::handle_overwrite( $opt{output} );
+        $opt{output} = _utils::handle_overwrite( $opt{output} )
+          unless $opt{force};
+        _utils::mkdirsfor( $opt{output} ) if $opt{output};
+        print("Saving updated geometry to $opt{output}\n") if $opt{output};
         $geom->printXYZ( $opt{output}, '', 1 );
     }
+
     return 0;
 }
 
@@ -126,17 +128,18 @@ GetOptions( 'help|h'        => \$opt{help},
             'change|c=f{3}' => \@{ $opt{change} },
             'print|p=i{4}'  => \@{ $opt{print} },
             'set|s=f{5}'    => \@{ $opt{set} },
+            'force|f'       => \$opt{force},
             'output|o=s'    => \$opt{output} )
   or pod2usage(
-                { -exitval => 1,
-                  -verbose => 1
-                } );
+    { -exitval => 1,
+      -verbose => 1
+    } );
 pod2usage(0) if $opt{help};
 pod2usage(
-           { -message => "Please specify a filename\n",
-             -exitval => 1,
-             -verbose => 1
-           } ) if @ARGV < 1;
+    { -message => "Please specify a filename\n",
+      -exitval => 1,
+      -verbose => 1
+    } ) if @ARGV < 1;
 pod2usage(
     {  -message =>
          "Please specify at least one of the following: --change, --print, --set\n",
@@ -168,9 +171,10 @@ Print current ATOM1-ATOM2-ATOM3-ATOM4 (1-indexed) dihedral to STDOUT
 
 Set new ATOM1-ATOM2-ATOM3-ATOM4 (1-indexed) dihedral to ANGLE
 
-=item B<-o outfile.xyz>, B<--output outfile.xyz>
+=item B<-o outfile.xyz [-f]>, B<--output outfile.xyz [--force]>
 
-Write new geometry output to xyz-file instead of STDOUT
+Write new geometry output to xyz-file instead of STDOUT.
+Optionally, force overwrite if file exists.
 
 =item B<-r>, B<--radians>
 

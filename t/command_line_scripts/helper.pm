@@ -9,13 +9,16 @@ use warnings;
 use Test::More;
 use Data::Dumper;
 
+use lib $ENV{QCHASM};
+use AaronTools::Geometry;
+
 sub trial {
     my $cmd  = shift;
     my $args = shift;
     my ( $err, $test, $ref, $success );
 
     system "$cmd $args->{args} 2>stderr.tmp 1>stdout.tmp";
-    ok( !$?, "$args->{message}: \n    $cmd $args->{args}" );
+    ok( !$?, "$args->{message}: $args->{args}" );
     open $err, '<', 'stderr.tmp';
     diag(<$err>) if $?;
     close $err;
@@ -25,19 +28,62 @@ sub trial {
             $args->{out} = 'stdout.tmp';
         }
 
-        open $test, '<', $args->{out};
-        open $ref,  '<', $args->{ref};
-        $success = 1;
-        while ( defined( my $t = <$test> ) && defined( my $r = <$ref> ) ) {
-            $success = $success && ( $t eq $r );
-            last unless $success;
+        if ( $args->{rmsd} ) {
+            $success = test_rmsd( $args->{out}, $args->{ref}, $args->{rmsd} );
+        } else {
+            $success = test_file_contents( $args->{out}, $args->{ref} );
+        }
+
+        my $error = '';
+        if ( $success !~ /^[01]$/ ) {
+            $error   = $success;
+            $success = 0;
         }
         ok( $success,
-            "Test output should match expected output: \n    $cmd $args->{args}"
-        );
+            "Test output should match expected output" );
+        diag($error) if $error;
+
     }
 
     system "rm stdout.tmp stderr.tmp";
+}
+
+sub test_file_contents {
+    my $test    = shift;
+    my $ref     = shift;
+    my $success = 1;
+
+    open TEST, '<', $test;
+    open REF,  '<', $ref;
+    while ( defined( my $t = <TEST> ) && defined( my $r = <REF> ) ) {
+        $success = $success && ( $t eq $r );
+        last unless $success;
+    }
+
+    return $success;
+}
+
+sub test_rmsd {
+    my $test      = shift;
+    my $ref       = shift;
+    my $threshold = shift;
+
+    my $rmsd;
+    eval {
+        $test = new AaronTools::Geometry( name => $test =~ /(.*)\.xyz/ );
+        $ref  = new AaronTools::Geometry( name => $ref =~ /(.*)\.xyz/ );
+
+        $rmsd = $test->RMSD( ref_geo => $ref, heavy_only=>1 );
+        1;
+    } or do {
+        return $@;
+    };
+
+    diag("RMSD: $rmsd");
+    if ( $rmsd < $threshold ) {
+        return 1;
+    }
+    return 0;
 }
 
 1;

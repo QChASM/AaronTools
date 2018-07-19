@@ -1,5 +1,0 @@
-# Running grab_coords -h
-# Running grab_coords 01/test.com
-# Running grab_coords 01/test.log
-# Running grab_coords 01/test.xyz
-# Running grab_coords 01/test.xyz -of 01/testout.xyz

@@ -16,9 +16,7 @@ sub main {
     my %opt  = @_;
 
     my $geom = _utils::get_geom($file);
-    unless ($geom) {
-        return 1;
-    }
+    return 1 unless ($geom);
 
     my @atoms;
     for my $atom ( @{ $opt{atoms} } ) {
@@ -33,6 +31,7 @@ sub main {
         return 0;
     }
     print( rad2deg($angle), "\n" );
+
     return 0;
 }
 
@@ -41,24 +40,23 @@ my @atoms;
 $opt{help}  = '';
 $opt{atoms} = \@atoms;
 $opt{rads}  = '';
-GetOptions(
-    'help|h'       => \$opt{help},
-    'atoms|a=i{3}' => \@atoms,
-    'radians|r'    => \$opt{rads} )
-  or pod2usage( {
+GetOptions( 'help|h'       => \$opt{help},
+            'atoms|a=i{3}' => \@atoms,
+            'radians|r'    => \$opt{rads} )
+  or pod2usage(
+    { -exitval => 1,
+      -verbose => 1
+    } );
+pod2usage(0) if $opt{help};
+pod2usage(
+    { -message => "Please specify a filename\n",
       -exitval => 1,
       -verbose => 1
-  } );
-pod2usage(0) if $opt{help};
-pod2usage( {
-        -message => "Please specify a filename\n",
-        -exitval => 1,
-        -verbose => 1
     } ) if @ARGV < 1;
-pod2usage( {
-        -message => "Please specify the atoms to find the angle between\n",
-        -exitval => 1,
-        -verbose => 1
+pod2usage(
+    { -message => "Please specify the atoms to find the angle between\n",
+      -exitval => 1,
+      -verbose => 1
     } ) unless ( @{ $opt{atoms} } );
 
 &main( $ARGV[0], %opt );

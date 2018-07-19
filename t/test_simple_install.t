@@ -9,23 +9,29 @@ use Test::More;
 use Data::Dumper;
 
 my @tests = ( 'environment_setup',
-#              'object_creation',
-#              'substitute',
-#              'screen_subs',
-#              'map_ligand',
+              'object_creation',
+              'substitute',
+              'screen_subs',
+              'map_ligand',
 			  'command_line_scripts'
 		  );
 
 # run each test
 my @failed;
 foreach my $t (@tests) {
-    diag("\n$t\n\n");
     eval {
         chdir($t);
-        my $status = system "./$t.t > /dev/null";
+        my $status = system "./$t.t 1>/dev/null 2>stderr.tmp";
         push @failed, $t if ($status);
+        ok( !$status, "$t" );
+		if ( $status && -f 'stderr.tmp' ){
+			open ERR, '<', 'stderr.tmp';
+			while (my $e = <ERR> ){
+				diag($e);
+			}
+		}
+		system "rm stderr.tmp" if ( -f 'stderr.tmp');
         chdir('..');
-        ok( !$status, "Ran test for: $t.t" );
         1;
     } or do {
         fail("Couldn't test: $t.t");

@@ -21,16 +21,18 @@ sub main {
       or die("File may be damaged, cannot read geometry\n");
 
     $opt{output} = _utils::handle_overwrite( $opt{output} ) unless $opt{force};
+    _utils::mkdirsfor( $opt{output} ) if $opt{output};
     $geo->printXYZ( $opt{output}, '', 1 );
-    return;
+
+    return 0;
 }
 
 my %opt;
 $opt{help}   = '';
 $opt{output} = '';
-GetOptions( 'help|h'            => \$opt{help},
-            'output-force|of=s' => \$opt{force},
-            'output|o=s'        => \$opt{output} )
+GetOptions( 'help|h'     => \$opt{help},
+            'force|f'    => \$opt{force},
+            'output|o=s' => \$opt{output} )
   or pod2usage(
     { -exitval => 1,
       -verbose => 1

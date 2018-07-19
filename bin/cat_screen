@@ -89,14 +89,19 @@ sub main {
         push @appends, get_appends( $geom, 'substrate', $opt{relnum} );
 
         # generate filename (with appropriate directory)
-        my $outfile = _utils::get_outfile( _utils::strip_dir($file),
-                                           $opt{write}, \@appends );
+        my $outfile = _utils::get_outfile(_utils::strip_dir($file), $opt{write},
+                                          \@appends );
+
+        # create necessary directories if they doesn't exist
+        _utils::mkdirsfor($outfile) if $outfile;
 
         # save or print to stdout
         print("Saving substituted coords to $outfile\n") if $outfile;
-        print("***\n") unless $outfile;
+        print("\n") unless $outfile;
         $geom->printXYZ($outfile);
     }
+
+    return 0;
 }
 
 # store atoms requested for substitution in the appropriate hash
@@ -192,24 +197,24 @@ GetOptions( 'help|h'            => \$opt{help},
             'relnum|r'          => \$opt{relnum},
             'write|w:s'         => \$opt{write} )
   or pod2usage(
-                { -exitval => 1,
-                  -verbose => 1
-                } );
+    { -exitval => 1,
+      -verbose => 1
+    } );
 pod2usage(0) if $opt{help};
 
 # need to supply a geometry file
 pod2usage(
-           { -message => "Please provide one geometry file to substitute",
-             -exitval => 1,
-             -verbose => 1
-           } ) unless ( $#ARGV == 0 );
+    { -message => "Please provide one geometry file to substitute",
+      -exitval => 1,
+      -verbose => 1
+    } ) unless ( $#ARGV == 0 );
 
 # target supplied as 1-indexed, Aaron uses 0-indexing
 
 if ( $opt{available} ) {
     _utils::get_available_subs();
 } else {
-    &main( \@ARGV, %opt );
+    &main( $ARGV[0], %opt );
 }
 
 =pod

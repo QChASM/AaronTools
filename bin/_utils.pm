@@ -159,8 +159,29 @@ Removes the directory path and returns only the file name
 =cut
 
     my $fname = shift;
-    $fname =~ s/.*\/(.*)/$1/;
+    $fname =~ s/(.*\/)*(.*)/$2/;
     return $fname;
+}
+
+sub mkdirsfor {
+
+=head2 mkdirsfor( FILENAME )
+
+Creates the directory structure necessary to save FILENAME
+
+=cut
+
+	my $path = shift;
+	if ( $path eq strip_dir($path) ){ return; }
+	$path =~ s/(.*\/)*(.*)/$1/;
+	my $dirs = '';
+	foreach my $dir ( split '/', $path ){
+		$dirs .= $dir . '/';
+		unless ( -d $dirs ){
+			print "Creating directory: $dirs\n";
+			mkdir $dirs;
+		}
+	}
 }
 
 sub handle_overwrite {

@@ -17,7 +17,7 @@ sub main {
     my %subs;
 
     my $geom = _utils::get_geom($file);
-    next unless $geom;
+    return 1 unless $geom;
 
     foreach my $target ( keys %{ $opt{subs} } ) {
         foreach my $k ( split /,/, $target ) {
@@ -53,8 +53,11 @@ sub main {
     }
 
     # prints to STDOUT if $outfile == ''
+    _utils::mkdirsfor($outfile) if $outfile;
     print("Saving substituted coords to $outfile\n") if $outfile;
     $geom->printXYZ( $outfile, $comment, 1 );
+
+	return 0;
 }
 
 # read in options
@@ -63,12 +66,12 @@ my %sublist;
 $opt{help}   = '';
 $opt{subs}   = \%sublist;
 $opt{output} = '';
-GetOptions( 'help|h'            => \$opt{help},
-            'available|a'       => \$opt{available},
-            'sub|s=s%{1,}'      => \%sublist,
-            'minimize|m'        => \$opt{minimize_torsion},
-            'output|o=s'        => \$opt{output},
-            'output-force|of=s' => \$opt{force} )
+GetOptions( 'help|h'       => \$opt{help},
+            'available|a'  => \$opt{available},
+            'sub|s=s%{1,}' => \%sublist,
+            'minimize|m'   => \$opt{minimize_torsion},
+            'output|o=s'   => \$opt{output},
+            'force|f'    => \$opt{force} )
   or pod2usage(
     { -exitval => 1,
       -verbose => 1
@@ -91,11 +94,6 @@ pod2usage(
       -exitval => 1,
       -verbose => 1
     } ) if ( @ARGV < 1 );
-
-if ( $opt{force} ) {
-    $opt{output} = $opt{force};
-    $opt{force}  = 1;
-}
 
 &main( $ARGV[0], %opt );
 
