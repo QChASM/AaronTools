@@ -1168,6 +1168,10 @@ sub _RMSD {
     my $matrix = new Math::MatrixReal(4,4);
 
     for my $atom (0..$#{$atoms1_ref}) {
+		if ( $atom > $#{$atoms2_ref} ){
+			print {*STDERR} "Target larger than reference, stopping at target atom $atom.\n";
+			last;
+		}
         if ($atoms1_ref->[$atom] =~ /^\d+$/ &&
             ($atoms2_ref->[$atom] =~ /^\d+$/) &&
             $heavy_only) {
@@ -1350,7 +1354,8 @@ sub get_center {
     my @groups = grep{ $_ =~ /^\d+$/ } @$groups;
 
     my $COM = V(0, 0, 0);
-    for my $atom (@groups) {$COM += $self->{coords}->[$atom];}
+    for my $atom (@groups) {
+		$COM += V(@{$self->{coords}->[$atom]});}
 
     for my $point (@xyz_groups) {$COM += $point;}
 

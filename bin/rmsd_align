@@ -5,6 +5,7 @@ use lib $ENV{'QCHASM'};
 
 use Getopt::Long;
 use Pod::Usage;
+use Data::Dumper;
 use AaronTools::Geometry;
 
 unshift @INC, ("$ENV{'QCHASM'}/AaronTools/bin");
@@ -44,21 +45,21 @@ sub main {
     print("Saving substituted coords to $opt{output}\n") if $opt{output};
     $targetgeom->printXYZ( $opt{output}, "RMSD: $rmsd", 1 );
 
-	return 0;
+    return 0;
 }
 
 # read in options
 my %opt;
-my @refatoms;
-my @targetatoms;
+my $refatoms;
+my $targetatoms;
 $opt{refatoms}    = undef;
 $opt{targetatoms} = undef;
-GetOptions( 'help|h'              => \$opt{help},
-            'heavyatoms|ha'       => \$opt{heavyatoms},
-            'refatoms|r=i{1,}'    => \@refatoms,
-            'targetatoms|t=i{1,}' => \@targetatoms,
-            'force|f'             => \$opt{force},
-            'output|o=s'          => \$opt{output} )
+GetOptions( 'help|h'          => \$opt{help},
+            'heavyatoms|ha'   => \$opt{heavyatoms},
+            'refatoms|r=s'    => \$refatoms,
+            'targetatoms|t=s' => \$targetatoms,
+            'force|f'         => \$opt{force},
+            'output|o=s'      => \$opt{output} )
   or pod2usage(
     { -exitval => 1,
       -verbose => 1
@@ -72,11 +73,32 @@ pod2usage(
     } ) unless ( @ARGV == 2 );
 
 # AaronTools uses 0-indexing
-foreach my $r (@refatoms) {
-    $r -= 1;
+sub split_atom_string {
+    my $atomstring = shift;
+    my @res;
+    for my $as ( split /,/, $atomstring ) {
+        if ( $as =~ /-/ ) {
+            my @tmp = split /-/, $as;
+            push @res, ( $tmp[0] .. $tmp[1] );
+        } else {
+            push @res, $as;
+        }
+    }
+	return @res;
 }
-foreach my $t (@targetatoms) {
-    $t -= 1;
+if ($refatoms) {
+    my @res = split_atom_string($refatoms);
+    foreach my $r (@res) {
+        $r -= 1;
+    }
+    $opt{refatoms} = \@res;
+}
+if ($targetatoms) {
+    my @res = split_atom_string($targetatoms);
+    foreach my $r (@res) {
+        $r -= 1;
+    }
+    $opt{targetatoms} = \@res;
 }
 
 &main( @ARGV, %opt );
