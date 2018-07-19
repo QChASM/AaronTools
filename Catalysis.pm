@@ -22,7 +22,6 @@ my $CENTER = NAMES->{CENTER};
 
 package AaronTools::Catalysis;
 use strict; use warnings;
-use experimental 'smartmatch';
 use Math::Trig;
 use Math::Vector::Real;
 use Math::MatrixReal;
@@ -1203,7 +1202,6 @@ sub remove_clash {
 
 package AaronTools::Component;
 use strict; use warnings;
-use experimental 'smartmatch';
 use Math::Trig;
 use Math::Vector::Real;
 use Data::Dumper;
@@ -1725,7 +1723,6 @@ sub part_LJ_energy {
 
 package AaronTools::Ligand;
 use strict; use warnings;
-use experimental 'smartmatch';
 use Math::Trig;
 use Math::Vector::Real;
 use Data::Dumper;
