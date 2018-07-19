@@ -15,6 +15,10 @@ sub main {
     my @files = @_;
 
     if ( $opt{output} ) {
+        unless ( $opt{force} ) {
+            $opt{output} = _utils::handle_overwrite( $opt{output} );
+        }
+        _utils::mkdirsfor( $opt{output} );
         open( OFILE, ">", $opt{output} )
           || die "$0: can't open $opt{output} for writing: $!\n";
 
@@ -56,17 +60,18 @@ my %opt;
 $opt{help}   = '';
 $opt{output} = '';
 GetOptions( 'help|h'     => \$opt{help},
-            'output|o:s' => \$opt{output} )
+            'force|f'    => \$opt{force},
+            'output|o=s' => \$opt{output} )
   or pod2usage(
-                { -exitval => 1,
-                  -verbose => 1
-                } );
+    { -exitval => 1,
+      -verbose => 1
+    } );
 pod2usage(0) if $opt{help};
 pod2usage(
-           { -message => "Please specify a filename\n",
-             -exitval => 1,
-             -verbose => 1
-           } ) if @ARGV < 1;
+    { -message => "Please specify a filename\n",
+      -exitval => 1,
+      -verbose => 1
+    } ) if @ARGV < 1;
 
 &main( \%opt, @ARGV );
 
@@ -84,9 +89,10 @@ grab_thermo [options] file1 [file2 file3]
 
 Print this help message and exit
 
-=item B<-o FILENAME>, B<--output FILENAME>
+=item B<-o FILENAME [-f]>, B<--output FILENAME [--force]>
 
-Write output to FILENAME (in csv format)
+Write output to FILENAME (in csv format).
+Optionally, force overwrite if file already exists.
 
 =back
 

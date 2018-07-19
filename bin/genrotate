@@ -14,7 +14,7 @@ unshift @INC, ("$ENV{'QCHASM'}/AaronTools/bin");
 require _utils;
 
 sub main {
-    my $files  = shift;
+    my $file  = shift;
     my %opt    = @_;
     my $angle  = $opt{angle};
     my $vector = V( @{ $opt{vector} } );
@@ -24,53 +24,51 @@ sub main {
         $angle = 2 * pi / $opt{nrots};
     }
 
-    # perform rotation for each file
-    foreach my $file ( @{$files} ) {
-        my $geom = _utils::get_geom($file);
-        next unless $geom;
+	my $geom = _utils::get_geom($file);
+	return 1 unless $geom;
 
-        # perform requested number of rotations
-        my $nrots = 0;
-        while ( $nrots < $opt{nrots} ) {
+	# perform requested number of rotations
+	my $nrots = 0;
+	while ( $nrots < $opt{nrots} ) {
 
-            # rotates target atoms if specified, defaults to all atoms
-            if ( @{ $opt{targets} } ) {
-                $geom->genrotate( $vector, $angle, $opt{targets} );
-            } else {
-                $geom->genrotate( $vector, $angle );
-            }
+		# rotates target atoms if specified, defaults to all atoms
+		if ( @{ $opt{targets} } ) {
+			$geom->genrotate( $vector, $angle, $opt{targets} );
+		} else {
+			$geom->genrotate( $vector, $angle );
+		}
 
-            # increase rotation count before printing for angle calculation
-            $nrots += 1;
+		# increase rotation count before printing for angle calculation
+		$nrots += 1;
 
-            # Printing
-            # $outfile will be empty string if write to file not requested
-            my $axis = join( '_', @{ $opt{vector} } );
-            my $outfile = _utils::get_outfile( $file, $opt{write},
-                                      [ 'genrotate', $axis, rad2deg($angle) ] );
-            if ( $opt{radians} ) {
-                my $outfile = _utils::get_outfile( $file, $opt{write},
-                                               [ 'genrotate', $axis, $angle ] );
-            }
+		# Printing
+		# $outfile will be empty string if write to file not requested
+		my $axis = join( '_', @{ $opt{vector} } );
+		my $outfile = _utils::get_outfile( $file, $opt{write},
+									[ 'genrotate', $axis, rad2deg($angle) ] );
+		if ( $opt{radians} ) {
+			my $outfile = _utils::get_outfile( $file, $opt{write},
+											[ 'genrotate', $axis, $angle ] );
+		}
 
-            # set comment line to something useful
-            my $comment;
-            if ($outfile) {
-                print("Saving to $outfile\n") if $outfile;
-                $comment = _utils::strip_dir($outfile);
-            } else {
-                print("###\n") if ( $file ne $files->[0] );
-                $comment = _utils::strip_dir($file);
-            }
-            if ( $opt{radians} ) {
-                $comment .= "  Rotated " . $angle * $nrots / pi . "*pi";
-            } else {
-                $comment .= "  Rotated " . rad2deg( $angle * $nrots );
-            }
+		# set comment line to something useful
+		my $comment;
+		if ($outfile) {
+			_utils::mkdirsfor($outfile);
+			print("Saving to $outfile\n") if $outfile;
+			$comment = _utils::strip_dir($outfile);
+		} else {
+			$comment = _utils::strip_dir($file);
+		}
+		if ( $opt{radians} ) {
+			$comment .= "  Rotated " . $angle * $nrots / pi . "*pi";
+		} else {
+			$comment .= "  Rotated " . rad2deg( $angle * $nrots );
+		}
 
-            # printXYZ('') prints to STDOUT
-            $geom->printXYZ( $outfile, $comment );
-        }
+		# printXYZ('') prints to STDOUT
+		$geom->printXYZ( $outfile, $comment, 1 );
+		print("\n") unless $outfile;
     }
     return 0;
 }

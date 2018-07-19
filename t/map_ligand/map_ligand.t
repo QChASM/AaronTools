@@ -77,7 +77,8 @@ sub check_rmsd {
     diag($@) if $@;
 }
 
-my @LIGANDS = ( 'SEGPHOS', 'Paton_EL', 'dithiolate-4F', 'squaramide-iPr' );
+#my @LIGANDS = ( 'S-SEGPHOS', 'Paton_EL', 'dithiolate-4F', 'squaramide-iPr' );
+my @LIGANDS = ( 'S-SEGPHOS' );
 foreach my $i ( 1 .. @LIGANDS ) {
     my $ligand = $LIGANDS[ $i - 1 ];
 	diag("Testing ligand $ligand");
@@ -89,3 +90,4 @@ foreach my $i ( 1 .. @LIGANDS ) {
 }
 
 done_testing();
+

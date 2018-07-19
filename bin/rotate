@@ -12,7 +12,7 @@ unshift @INC, ("$ENV{'QCHASM'}/AaronTools/bin");
 require _utils;
 
 sub main {
-    my $files = shift;
+    my $file  = shift;
     my %opt   = @_;
     my $angle = $opt{angle};
 
@@ -21,48 +21,47 @@ sub main {
         $angle = 2 * pi / $opt{nrots};
     }
 
-    foreach my $file ( @{$files} ) {
+    # perform rotation for each file
+    my $geom = _utils::get_geom($file);
+    return 1 unless $geom;
 
-        # perform rotation for each file
-        my $geom = _utils::get_geom($file);
-        next unless $geom;
+    # perform requested number of rotations
+    my $nrots = 0;
+    while ( $nrots < $opt{nrots} ) {
+        $geom->rotate( $opt{axis}, $angle );
 
-        # perform requested number of rotations
-        my $nrots = 0;
-        while ( $nrots < $opt{nrots} ) {
-            $geom->rotate( $opt{axis}, $angle );
+        # increase rotation count before printing for angle calculation
+        $nrots += 1;
 
-            # increase rotation count before printing for angle calculation
-            $nrots += 1;
-
-            # Printing
-            # generate outfile name
-            my $outfile = _utils::get_outfile( $file, $opt{write},
-                                    [ 'rotate', $opt{axis}, rad2deg($angle) ] );
-            if ( $opt{radians} ) {
-                my $outfile = _utils::get_outfile( $file, $opt{write},
-                                             [ 'rotate', $opt{axis}, $angle ] );
-            }
-
-            # set comment line to something useful
-            my $comment;
-            if ($outfile) {
-                print("Saving to $outfile\n") if $outfile;
-                $comment = _utils::strip_dir($outfile);
-            } else {
-                print("###\n") if ( $file ne $files->[0] );
-                $comment = _utils::strip_dir($file);
-            }
-            if ( $opt{radians} ) {
-                $comment .= "  Rotated " . $angle * $nrots / pi . "*pi";
-            } else {
-                $comment .= "  Rotated " . rad2deg( $angle * $nrots );
-            }
-
-            # prints to STDOUT if $outfile == ''
-            $geom->printXYZ( $outfile, $comment );
+        # Printing
+        # generate outfile name
+        my $outfile;
+        if ( $opt{radians} ) {
+            $outfile = _utils::get_outfile(
+                $file, $opt{write},
+                [ 'rotate', $opt{axis}, $angle ] );
+        } else {
+            $outfile = _utils::get_outfile(
+                $file, $opt{write},
+                [ 'rotate', $opt{axis}, rad2deg($angle) ] );
         }
+
+        # set comment line to something useful
+        my $comment = _utils::strip_dir($file);
+        if ( $opt{radians} ) {
+            $comment .= "  Rotated " . $angle * $nrots / pi . "*pi";
+        } else {
+            $comment .= "  Rotated " . rad2deg( $angle * $nrots );
+        }
+
+        # prints to STDOUT if $outfile == ''
+		_utils::mkdirsfor($outfile) if $outfile;
+		print("Saving to $outfile\n") if $outfile;
+        $geom->printXYZ( $outfile, $comment );
+        print("\n") if $outfile;
     }
+
+	return 0;
 }
 
 # read in options
@@ -80,9 +79,9 @@ GetOptions( 'help|h'    => \$opt{help},
             'radians|r' => \$opt{radians},
             'write|w:s' => \$opt{write} )
   or pod2usage(
-                { -exitval => 1,
-                  -verbose => 1
-                } );
+    { -exitval => 1,
+      -verbose => 1
+    } );
 pod2usage(0) if $opt{help};
 
 # requiree axis, angle, and original coords
@@ -96,24 +95,24 @@ pod2usage(
 
 # axis should be cartesian axis
 pod2usage(
-           { -message => "Rotation axis must be either x, y, or z axis\n",
-             -exitval => 1,
-             -verbose => 1
-           } ) unless ( $opt{axis} =~ m/[xXyYzZ]/ );
+    { -message => "Rotation axis must be either x, y, or z axis\n",
+      -exitval => 1,
+      -verbose => 1
+    } ) unless ( $opt{axis} =~ m/[xXyYzZ]/ );
 
 # number of rotations should be a positive number (defaults to 1)
 pod2usage(
-           { -message => "Number of rotations must be a positive integer.\n",
-             -exitval => 1,
-             -verbose => 1
-           } ) if ( $opt{nrots} < 0 );
+    { -message => "Number of rotations must be a positive integer.\n",
+      -exitval => 1,
+      -verbose => 1
+    } ) if ( $opt{nrots} < 0 );
 
 # angle should be in radians
 unless ( $opt{radians} ) {
     $opt{angle} = deg2rad( $opt{angle} );
 }
 
-&main( \@ARGV, %opt );
+&main( $ARGV[0], %opt );
 
 =pod
 

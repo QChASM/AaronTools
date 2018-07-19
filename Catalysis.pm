@@ -22,6 +22,7 @@ my $CENTER = NAMES->{CENTER};
 
 package AaronTools::Catalysis;
 use strict; use warnings;
+use experimental 'smartmatch';
 use Math::Trig;
 use Math::Vector::Real;
 use Math::MatrixReal;
@@ -97,7 +98,7 @@ sub detect_component {
                 $self->{center_atom} = $TM;
                 $self->{substrate_atoms} = [0..$TM-1];
             }else {
-                print "No transition metal was found in the geometry. ".
+                print {*STDERR} "No transition metal was found in the geometry. ".
                       "Catalysis object is determined to be purely organic. " .
                       "If this is a Si, P or other non-metal atom centered ".
                       "system, please specify that in the .xyz file.\n";
@@ -1202,6 +1203,7 @@ sub remove_clash {
 
 package AaronTools::Component;
 use strict; use warnings;
+use experimental 'smartmatch';
 use Math::Trig;
 use Math::Vector::Real;
 use Data::Dumper;
@@ -1723,6 +1725,7 @@ sub part_LJ_energy {
 
 package AaronTools::Ligand;
 use strict; use warnings;
+use experimental 'smartmatch';
 use Math::Trig;
 use Math::Vector::Real;
 use Data::Dumper;
@@ -2094,7 +2097,7 @@ sub _map_remote {
             }else {
                 $keepgoing = 0;
                 if ($minRMSD > 0.4) {
-                    print "Mapping may have failed\n";
+                    print {*STDERR} "Mapping may have failed\n";
                 }
             }
 
@@ -2166,16 +2169,26 @@ sub detect_backbone_subs {
     my $self = shift;
     my @sub_atoms;
 
+    my %constraints;
+
+    for my $constraint (@{ $self->{constraints} }) {
+        for my $i (0,1) {
+            if ($constraint->[0]->[$i] =~ /^\d+$/) {
+                $constraints{$constraint->[0]->[$i]} = 1;
+            }
+        }
+    }
+
     for my $target ( sort { $a <=> $b } keys %{ $self->{substituents} } ) {
 
         my $nearst = $self->{substituents}->{$target}->{end};
         my $groups = $nearst ?
                      $self->get_all_connected($target, $nearst) : '';
-
         unless ($nearst && $groups) {
             my $min = 999;
             for my $near (@{ $self->{connection}->[$target] }) {
                 my $connected = $self->get_all_connected($target, $near);
+                next if (grep {exists $constraints{$_}} @$connected);
                 if ($#{ $connected } < $min) {
                     $min = $#{ $connected };
                     $nearst = $near;

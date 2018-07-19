@@ -43,19 +43,16 @@ sub main {
             }
 
             # generate outfile name and comment string
-            my $outfile =
-              _utils::get_outfile( $file, $opt{write},
-                                   [ 'shift', join( '_', @v ) ] );
+            my $outfile = _utils::get_outfile( $file, $opt{write},
+                                               [ 'shift', join( '_', @v ) ] );
             my $comment = _utils::strip_dir($file);
             $comment .= '   Shifted by (' . join( ',', @v ) . ')';
-            if ($outfile) {
-                print("Saved to $outfile\n");
-            } else {
-                print("###\n") if ( $file ne $files->[0] );
-            }
 
             # prints to STDOUT if $outfile == ''
-            $geom->printXYZ( $outfile, $comment );
+            _utils::mkdirsfor($outfile)  if $outfile;
+            print("Saved to $outfile\n") if $outfile;
+            $geom->printXYZ( $outfile, $comment, 1 );
+            print("\n") unless $outfile;
         }
     }
 }
@@ -75,23 +72,23 @@ GetOptions( 'help|h'         => \$opt{help},
             'targets|t:i{,}' => \@targets,
             'write|w:s'      => \$opt{write} )
   or pod2usage(
-                { -exitval => 1,
-                  -verbose => 1
-                } );
+    { -exitval => 1,
+      -verbose => 1
+    } );
 pod2usage(0) if $opt{help};
 
 # requires a shift vector and at least one file
 pod2usage(
-           { -message => "Please provide a shift vector and at least one file",
-             -exitval => 1,
-             -verbose => 1
-           } ) unless ( @ARGV > 0 and @{ $opt{vector} } );
+    { -message => "Please provide a shift vector and at least one file",
+      -exitval => 1,
+      -verbose => 1
+    } ) unless ( @ARGV > 0 and @{ $opt{vector} } );
 
 pod2usage(
-           { -message => "Number of repeats must be a positive integer.\n",
-             -exitval => 1,
-             -verbose => 1
-           } ) if ( $opt{nshift} < 0 );
+    { -message => "Number of repeats must be a positive integer.\n",
+      -exitval => 1,
+      -verbose => 1
+    } ) if ( $opt{nshift} < 0 );
 
 # targets supplied as 1-indexed, Aaron uses 0-indexing
 foreach my $t ( @{ $opt{targets} } ) {

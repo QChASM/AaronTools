@@ -20,26 +20,34 @@ sub main {
     $geo->read_geometry($file)
       or die("File may be damaged, cannot read geometry\n");
 
-    $opt{output} = _utils::handle_overwrite( $opt{output} );
-    $geo->printXYZ( $opt{output} );
-    return;
+    $opt{output} = _utils::handle_overwrite( $opt{output} ) unless $opt{force};
+    _utils::mkdirsfor( $opt{output} ) if $opt{output};
+    $geo->printXYZ( $opt{output}, '', 1 );
+
+    return 0;
 }
 
 my %opt;
 $opt{help}   = '';
 $opt{output} = '';
 GetOptions( 'help|h'     => \$opt{help},
-            'output|o:s' => \$opt{output} )
+            'force|f'    => \$opt{force},
+            'output|o=s' => \$opt{output} )
   or pod2usage(
-                { -exitval => 1,
-                  -verbose => 1
-                } );
+    { -exitval => 1,
+      -verbose => 1
+    } );
 pod2usage(0) if $opt{help};
 pod2usage(
-           { -message => "Please specify a filename\n",
-             -exitval => 1,
-             -verbose => 1
-           } ) if @ARGV < 1;
+    { -message => "Please specify a filename\n",
+      -exitval => 1,
+      -verbose => 1
+    } ) if @ARGV < 1;
+
+if ( $opt{force} ) {
+    $opt{output} = $opt{force};
+    $opt{force}  = 1;
+}
 
 &main( \%opt, @ARGV );
 
@@ -47,7 +55,7 @@ pod2usage(
 
 =head1 SYNOPSIS
 
-pg2xyz [options] filename
+grab_coords [-o[f] outfile.xyz] filename
 
 =head1 OPTIONS
 
@@ -57,9 +65,9 @@ pg2xyz [options] filename
 
 Print this help message and exit
 
-=item B<-o FILENAME>, B<--output FILENAME>
+=item B<-o[f] FILENAME>, B<--output[-force] FILENAME>
 
-Write output to FILENAME (in xyz format)
+Write output to FILENAME (in xyz format). Optionally, force overwrite if FILENAME exists
 
 =back
 

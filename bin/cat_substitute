@@ -35,27 +35,33 @@ sub main {
     return 1 unless $geom;
 
     # perform substitute for each substituent
-    foreach my $component ( keys %numbered ) {
-        # determine requested target atom, in aaron's number scheme
-        my %params;
-        my %convert = _utils::get_sub_numbers( $geom, $component );
-        while ( my ( $target, $aaron_num ) = each %convert ) {
-            map { $params{$_} = $opt{$component}{$target}; } split /,/,
-              $aaron_num;
+    #foreach my $component ( keys %numbered ) {
+    #    # determine requested target atom, in aaron's number scheme
+    #    my %params;
+    #    my %convert = _utils::get_sub_numbers( $geom, $component );
+    #    while ( my ( $target, $aaron_num ) = each %convert ) {
+    #        map { $params{$_} = $opt{$component}{$target}; } split /,/,
+    #          $aaron_num;
 
-        }
-        # do substitution
-        $geom->substitute( $component, %params );
-    }
+    #    }
+    #    # do substitution
+    #    $geom->substitute( $component, %params );
+    #}
+
+    $geom->substitute();
+
     foreach my $component ( keys %named ) {
         $geom->substitute( $component, %{ $named{$component} } );
     }
 
     # Printing
     # prints to STDOUT if $outfile == ''
-    $opt{outfile} = _utils::handle_overwrite( $opt{outfile} );
-    print("Saving substituted coords to $opt{outfile}\n") if $opt{outfile};
-    $geom->printXYZ( $opt{outfile}, '', 1 );
+    $opt{output} = _utils::handle_overwrite( $opt{output} ) unless $opt{force};
+    _utils::mkdirsfor( $opt{output} ) if $opt{output};
+    print("Saving substituted coords to $opt{output}\n") if $opt{output};
+    $geom->printXYZ( $opt{output}, '', 1 );
+
+    return 0;
 }
 
 # store atoms requested for substitution in the appropriate hash
@@ -68,9 +74,10 @@ sub store_requested {
 
     foreach my $sub ( keys %{ $opt{$component} } ) {
         if ( $sub =~ /^\d+,/ ) {
-            map { $numbered{ $_ - 1 } = $sub } split( /,/, $sub );
+            map { $numbered{ $_ - 1 } = $opt{$component}{$sub} }
+              split( /,/, $sub );
         } elsif ( $sub =~ /^\d+/ ) {
-            $numbered{ $sub - 1 } = $sub;
+            $numbered{ $sub - 1 } = $opt{$component}{$sub};
         } else {
             $named{$sub} = $opt{$component}{$sub};
         }
@@ -85,18 +92,23 @@ my %sublist;
 my %liglist;
 $opt{substrate} = \%sublist;
 $opt{ligand}    = \%liglist;
-$opt{outfile}   = '';
 GetOptions( 'help|h'            => \$opt{help},
             'available|a'       => \$opt{available},
             'relnum|r'          => \$opt{relnum},
             'substrate|s=s%{,}' => \%sublist,
             'ligand|l=s%{,}'    => \%liglist,
-            'output|o:s'        => \$opt{outfile} )
+            'force|f'           => \$opt{force},
+            'output|o=s'        => \$opt{output} )
   or pod2usage(
     { -exitval => 1,
       -verbose => 1
     } );
 pod2usage(0) if $opt{help};
+
+if ( $opt{available} ) {
+    _utils::get_available_subs();
+    exit;
+}
 
 # need to supply a geometry file
 pod2usage(
@@ -105,13 +117,7 @@ pod2usage(
       -verbose => 1
     } ) unless ( $#ARGV == 0 );
 
-# target supplied as 1-indexed, Aaron uses 0-indexing
-
-if ( $opt{available} ) {
-    _utils::get_available_subs();
-} else {
-    &main( $ARGV[0], %opt );
-}
+&main( $ARGV[0], %opt );
 
 =pod
 
@@ -125,7 +131,7 @@ cat_substitute [options] [-l|s target=sub ...] file
 
 =item B<-a>, B<--available>
 
-List available substituents
+List available substituents and exit
 
 =item B<-l target=sub>, B<--ligand target=sub>
 
@@ -139,9 +145,9 @@ Replace target (atom or substituent) on substrate with specified substituent
 
 Use relative ligand/substrate numbering
 
-=item B<-o outfile>, B<--output outfile>
+=item B<-o outfile [-f]>, B<--output outfile [--force]>
 
-Output to file instead of STDOUT
+Output to file instead of STDOUT. Optionally, force overwrite if file exists
 
 =item B<-h>, B<--help>
 

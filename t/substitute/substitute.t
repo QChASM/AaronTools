@@ -50,7 +50,7 @@ sub trial {
     eval {
         $rmsd = $test->RMSD( ref_geo => $ref );
         ok( $rmsd < 0.2, "RMSD validation" );
-        diag("RMSD: $rmsd");
+        diag("RMSD: $rmsd") if ( $rmsd > 0.2 );
         1;
     } or do {
         fail("RMSD could not be calculated");
