@@ -42,7 +42,7 @@ sub findJob {
                 push(@jobIDs,$1);
             }
         }
-    }elsif ($queue_type =~ /PBS/i) {				#PBS (default)
+    }elsif ($queue_type =~ /PBS/i) {				#PBS
         my $qstat = `qstat -fx`;
     
         #First grab all jobs
@@ -50,7 +50,7 @@ sub findJob {
     
         #Grab jobIDs for all jobs matching $Path
         foreach my $job (@jobs) {
-        	if ($job =~ m/<Job_Id>(\d+)\S+PBS_O_WORKDIR=\S+$Path</) {
+        	if ($job =~ m/<Job_Id>(\d+)\S+<job_state>[QR]\S+PBS_O_WORKDIR=\S+$Path</) {
         		push(@jobIDs, $1);
         	}
         }
