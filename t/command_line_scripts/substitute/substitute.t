@@ -41,7 +41,6 @@ push @args,
 
 foreach my $a (@args) {
     helper::trial( $cmd, $a );
-	last;
 }
 
 done_testing();
