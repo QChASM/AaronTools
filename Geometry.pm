@@ -354,9 +354,6 @@ sub refresh_connected {
   foreach my $atom1 (@$subgroups) {
     my @row;
     foreach my $atom2 (@$subgroups) {
-		unless (defined $self->{coords}->[$atom2]){
-			print Dumper($self);
-		}
       my $distance = $self->distance(atom1 => $atom1, atom2 => $atom2);
 
       my $cutoff = $radii->{$self->{elements}->[$atom1]} +
@@ -1104,46 +1101,133 @@ sub get_bond {
 ###################
 #RMSD related part#
 ###################
-sub RMSD {
+sub _sort_conn {
+	# sorts connectivity array based on the maximum connectivity of the atoms
+	# eg: NCH => CNH
+	my ( $geom, $index ) = @_;
+
+	my @indicies= @{ $geom->{connection}->[$index] };
+	@indicies = sort {
+		$CONNECTIVITY->{ $geom->{elements}->[$b] }
+		<=>
+		$CONNECTIVITY->{ $geom->{elements}->[$a] }
+	} @indicies;
+
+	return \@indicies;
+}
+sub _get_order{
+	# generates an atom order based on connectivity
+	my ($geom, $atoms, $start) = @_;
+
+	# order starts with $start
+	my @order = ($start);
+	# add atoms connected to $start to the stack, sorted
+	my @stack = _sort_conn($geom, $start);
+
+	while ( @stack > 0 ){
+		# get a connectivity array from the front of the stack
+		my $conn = shift @stack;
+		# those atoms aren't already in @order, add them
+		for my $o ( @order ){
+			@$conn = grep { $_ != $o } @$conn;
+		}
+		push @order, @$conn;
+		# push the connectivity arrays of connected atoms to back of stack
+		for my $c ( @$conn ){
+			push @stack, _sort_conn($geom, $c);
+		}
+	}
+	return \@order;
+}
+sub _reorder {
+	# generate connectivity-based order for each possible starting atom
+	my $geom = shift;
+	my $atoms = shift;
+	$atoms //= [0..$#{$geom->elements()}];
+
+	my @orders;
+	for my $r ( @$atoms ){
+		if ( $geom->{elements}[$r] eq 'H' ){ next; }
+		push @orders, _get_order($geom, $atoms, $r);
+	}
+	return @orders;
+}
+
+sub RMSD_reorder {
+    my $self   = shift;
+    my %params = @_;
+
+    my ( $geo2, $heavy_only, $atoms1_ref, $atoms2_ref ) = ($params{ref_geo},
+                                                           $params{heavy_atoms},
+                                                           $params{ref_atoms1},
+                                                           $params{ref_atoms2}
+    );
+    my @orders1 = _reorder( $self, $atoms1_ref );
+    my @orders2 = _reorder( $geo2, $atoms2_ref );
+
+    my ( $min_rmsd, $min_struct );
+    my ( $geo1,     $rmsd );
+    for my $o1 (@orders1) {
+        for my $o2 (@orders2) {
+            $geo1 = $self->copy();
+            $rmsd = $geo1->RMSD( ref_geo     => $geo2,
+                                 heavy_atoms => $heavy_only,
+                                 ref_atoms1  => $o1,
+                                 ref_atoms2  => $o2 );
+            if ( !defined $min_rmsd || $rmsd < $min_rmsd ) {
+                $min_rmsd   = $rmsd;
+                $min_struct = $geo1->copy();
+            }
+        }
+    }
+    $self = $min_struct;
+    return $min_rmsd;
+}
+
+sub RMSD{
     my $self = shift;
 
     my %params = @_;
 
-    my ($geo2, $heavy_only,
-        $atoms1_ref, $atoms2_ref) = ( $params{ref_geo}, $params{heavy_atoms},
-                                      $params{ref_atoms1}, $params{ref_atoms2} );
+	if ( defined $params{reorder} ){
+		return $self->RMSD_reorder( %params );
+	}
+
+    my ( $geo2, $heavy_only, $atoms1_ref, $atoms2_ref ) = ($params{ref_geo},
+                                                           $params{heavy_atoms},
+                                                           $params{ref_atoms1},
+                                                           $params{ref_atoms2});
 
     $heavy_only //= 0;
-    $atoms1_ref //= [0..$#{ $self->{elements} }];
-    $atoms2_ref //= [0..$#{ $geo2->{elements} }];
+    $atoms1_ref //= [ 0 .. $#{ $self->{elements} } ];
+    $atoms2_ref //= [ 0 .. $#{ $geo2->{elements} } ];
 
-    my $cen1 = $self->get_center($atoms1_ref);
-    my $cen2 = $geo2->get_center($atoms2_ref);
+	my $cen1 = $self->get_center($atoms1_ref);
+	my $cen2 = $geo2->get_center($atoms2_ref);
 
-    $geo2 = $geo2->copy();
+	$geo2 = $geo2->copy();
 
-    $self->coord_shift(-1*$cen1);
-    $geo2->coord_shift(-1*$cen2);
+	$self->coord_shift( -1 * $cen1 );
+	$geo2->coord_shift( -1 * $cen2 );
 
-    for my $i (0..2) {
-        map {$atoms1_ref->[$_]->[$i] -= $cen1->[$i]}
-            grep {$atoms1_ref->[$_] !~ /^\d+$/} (0..$#{$atoms1_ref});
-        map {$atoms2_ref->[$_]->[$i] -= $cen2->[$i]}
-            grep {$atoms2_ref->[$_] !~ /^\d+$/} (0..$#{$atoms2_ref});
-    }
+	for my $i ( 0 .. 2 ) {
+		map { $atoms1_ref->[$_]->[$i] -= $cen1->[$i] }
+		  grep { $atoms1_ref->[$_] !~ /^\d+$/ } ( 0 .. $#{$atoms1_ref} );
+		map { $atoms2_ref->[$_]->[$i] -= $cen2->[$i] }
+		  grep { $atoms2_ref->[$_] !~ /^\d+$/ } ( 0 .. $#{$atoms2_ref} );
+	}
 
-    my $rmsd = $self->_RMSD($geo2, $heavy_only, $atoms1_ref, $atoms2_ref);
+	my $rmsd = $self->_RMSD( $geo2, $heavy_only, $atoms1_ref, $atoms2_ref );
 
-    $self->coord_shift($cen2);
+	$self->coord_shift($cen2);
 
-    for my $i (0..2) {
-        map {$atoms1_ref->[$_]->[$i] += $cen2->[$i]}
-            grep {$atoms1_ref->[$_] !~ /^\d+$/} (0..$#{$atoms1_ref});
-    }
+	for my $i ( 0 .. 2 ) {
+		map { $atoms1_ref->[$_]->[$i] += $cen2->[$i] }
+		  grep { $atoms1_ref->[$_] !~ /^\d+$/ } ( 0 .. $#{$atoms1_ref} );
+	}
 
-    return $rmsd;
+	return $rmsd;
 }
-
 
 sub MSD {
     my $self = shift;
@@ -1169,7 +1253,6 @@ sub _RMSD {
 
     for my $atom (0..$#{$atoms1_ref}) {
 		if ( $atom > $#{$atoms2_ref} ){
-			print {*STDERR} "Target larger than reference, stopping at target atom $atom.\n";
 			last;
 		}
         if ($atoms1_ref->[$atom] =~ /^\d+$/ &&
@@ -1191,11 +1274,11 @@ sub _RMSD {
     my ($eigenvalues, $evectors) = $matrix->sym_diagonalize();
 
     #find smallest of four eigenvalues and save corresponding eigenvectors
-    my $sd = 999;
+    my $sd;
     my $Q = new Math::MatrixReal(1,4);
     foreach my $i (1..4) {
       my $value = $eigenvalues->element($i,1);
-      if($value < $sd) {
+      if(!defined $sd || $value < $sd) {
         $sd = $value;
         $Q = $evectors->column($i);
       }
@@ -1534,11 +1617,14 @@ sub XYZ {
     unless($comment) {
 
         if ($self->{constraints}) {
-            $comment .= " F:";
+			my $has_constraints = 0;
             for my $constraint (@{$self->{constraints}}) {
+				if ( grep { /^\D+$/ } @{ $constraint->[0] } ){ next; }
                 my @bond = map { $_ + 1 } @{ $constraint->[0] };
                 $comment .= "$bond[0]-$bond[1];";
+				$has_constraints = 1;
             }
+            $comment = " F:" . $comment if $has_constraints;
         }
 
         if ($self->{ligand}->{active_centers} ||
