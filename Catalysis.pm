@@ -461,7 +461,9 @@ sub map_ligand {
 
     $self->remove_clash();
 
-    $self->rebuild()
+    $self->rebuild();
+
+    print Dumper($self->{constraints});
     #FIXME more atoms case implemented in the furture
 }
 
@@ -522,6 +524,7 @@ sub _map_ligand {
 
             my ($subs, $ligand_mapped) =
                 $ligand->_map_remote($ligand_ref, $key_atoms1, $key_atoms2, $ref1_center);
+            $self->replace_ligand($ligand_mapped);
             $self->minimize_sub_torsions(object => $self->ligand(), subs => $subs);
         }
 
@@ -763,9 +766,9 @@ sub replace_ligand {
     for my $con_n (0..$#{ $self_l_copy->{constraints} }) {
         for my $i (0..1) {
             for my $center_n (0..$#self_l_key) {
-                if ($self_l_copy->{constraints}->[$con_n]->[$i] =~ /^d+$/ &&
-                    $self_l_copy->{constraints}->[$con_n]->[$i] == $self_l_key[$i]) {
-                    $self_l_copy->{constraints}->[$con_n]->[$i] = $ligand_key[$i];
+                if ($self_l_copy->{constraints}->[$con_n]->[0]->[$i] =~ /^\d+$/ &&
+                    $self_l_copy->{constraints}->[$con_n]->[0]->[$i] == $self_l_key[$center_n]) {
+                    $self_l_copy->{constraints}->[$con_n]->[0]->[$i] = $ligand_key[$center_n];
                 }
             }
         }
@@ -1442,10 +1445,10 @@ sub _rearrange_active_con {
     if ($self->{constraints}) {
         for my $n_con (0..$#{ $self->{constraints} }) {
             for my $i (0..1) {
-                if ($self->{constraints}->[$n_con]->[$i] =~ /^\d+$/ &&
-                    exists $old_new->{$self->{constraints}->[$n_con]->[$i]}) {
-                    $self->{constraints}->[$n_con]->[$i] =
-                        $old_new->{$self->{constraints}->[$n_con]->[$i]};
+                if ($self->{constraints}->[$n_con]->[0]->[$i] =~ /^\d+$/ &&
+                    exists $old_new->{$self->{constraints}->[$n_con]->[0]->[$i]}) {
+                    $self->{constraints}->[$n_con]->[0]->[$i] =
+                        $old_new->{$self->{constraints}->[$n_con]->[0]->[$i]};
                 }
             }
         }
