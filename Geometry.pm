@@ -1167,7 +1167,6 @@ sub RMSD_reorder {
 
     my @orders1 = _reorder( $self, $atoms1_ref );
     my @orders2 = _reorder( $geo2, $atoms2_ref );
-	print Dumper ( $#orders1, $#orders2 );
 
     my ( $min_rmsd, $min_struct );
     my ( $geo1,     $rmsd );
