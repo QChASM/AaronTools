@@ -1160,16 +1160,23 @@ sub RMSD_reorder {
     my ( $geo2, $heavy_only, $atoms1_ref, $atoms2_ref ) = ($params{ref_geo},
                                                            $params{heavy_atoms},
                                                            $params{ref_atoms1},
-                                                           $params{ref_atoms2}
-    );
+                                                           $params{ref_atoms2});
+    $heavy_only //= 0;
+    $atoms1_ref //= [ 0 .. $#{ $self->{elements} } ];
+    $atoms2_ref //= [ 0 .. $#{ $geo2->{elements} } ];
+
     my @orders1 = _reorder( $self, $atoms1_ref );
     my @orders2 = _reorder( $geo2, $atoms2_ref );
+	print Dumper ( $#orders1, $#orders2 );
 
     my ( $min_rmsd, $min_struct );
     my ( $geo1,     $rmsd );
+#	my ( $time, $count, $avg_time );
     for my $o1 (@orders1) {
         for my $o2 (@orders2) {
             $geo1 = $self->copy();
+#			$time = time;
+#			$count++;
             $rmsd = $geo1->RMSD( ref_geo     => $geo2,
                                  heavy_atoms => $heavy_only,
                                  ref_atoms1  => $o1,
@@ -1178,6 +1185,11 @@ sub RMSD_reorder {
                 $min_rmsd   = $rmsd;
                 $min_struct = $geo1->copy();
             }
+#			if ( $avg_time ){
+#				$avg_time = ( $avg_time * ( $count - 1 ) / $count )
+#			}
+#			$avg_time += ( ( time - $time ) / $count );
+#			print Dumper( $avg_time );
         }
     }
     $self = $min_struct;
@@ -1197,7 +1209,6 @@ sub RMSD{
                                                            $params{heavy_atoms},
                                                            $params{ref_atoms1},
                                                            $params{ref_atoms2});
-
     $heavy_only //= 0;
     $atoms1_ref //= [ 0 .. $#{ $self->{elements} } ];
     $atoms2_ref //= [ 0 .. $#{ $geo2->{elements} } ];

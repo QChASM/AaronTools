@@ -29,7 +29,8 @@ sub trial {
         }
 
         if ( $args->{rmsd} ) {
-            $success = test_rmsd( $args->{out}, $args->{ref}, $args->{rmsd} );
+            $success = test_rmsd( $args->{out}, $args->{ref}, $args->{rmsd},
+                                  $args->{reorder} );
         } else {
             $success = test_file_contents( $args->{out}, $args->{ref} );
         }
@@ -67,13 +68,14 @@ sub test_rmsd {
     my $test      = shift;
     my $ref       = shift;
     my $threshold = shift;
+    my $reorder   = 0;
 
     my $rmsd;
     eval {
         $test = new AaronTools::Geometry( name => $test =~ /(.*)\.xyz/ );
         $ref  = new AaronTools::Geometry( name => $ref =~ /(.*)\.xyz/ );
 
-        $rmsd = $test->RMSD( ref_geo => $ref, heavy_only=>1 );
+        $rmsd = $test->RMSD( ref_geo => $ref, reorder => $reorder );
         1;
     } or do {
         return $@;

@@ -16,7 +16,7 @@ eval {
 diag($@) if $@;
 
 sub trial {
-    my ( $test, $refs, $component, $subs ) = @_;
+    my ( $test, $refs, $component, $subs, $reorder ) = @_;
     my $t = "$_[0]";
 
     eval {
@@ -54,9 +54,10 @@ sub trial {
         diag($@) if $@;
 
         eval {
-            my $rmsd = $results[$idx++]->RMSD( ref_geo => $ref );
+            my $rmsd =
+              $results[ $idx++ ]->RMSD( ref_geo => $ref, reorder => $reorder );
             ok( $rmsd < 0.2, "Substituted result should match reference" );
-			1;
+            1;
         } or do {
             fail("Couldn't calculate RMSD: $r");
         };
@@ -64,8 +65,9 @@ sub trial {
     }
 }
 
-my $test = '01';
-my $subs = [ 'Me', 'Et', 'Cl', 'tBu' ];
-trial( $test, $subs, 'ligand', { 14 => $subs } );
+my $test    = '01';
+my $subs    = [ 'Me', 'Et', 'Cl', 'tBu' ];
+my $reorder = 0;
+trial( $test, $subs, 'ligand', { 14 => $subs }, $reorder );
 
 done_testing();

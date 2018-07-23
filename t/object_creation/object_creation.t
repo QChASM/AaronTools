@@ -66,7 +66,7 @@ sub validate_object {
 
 sub trial {
     my ( $type, $g, $gskip ) = @_;
-    my ( $geom );
+    my ($geom);
 
     # Check Geometry objects
     diag("\n$type");

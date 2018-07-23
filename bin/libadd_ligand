@@ -22,7 +22,7 @@ sub main {
     my $HOME = $ENV{'HOME'};
 
     #Check to make sure $HOME/Aaron_libs/Ligands exists. Make it if it doesn't.
-    if ( !-f "$HOME/Aaron_libs/Ligands" ) {
+    if ( !-d "$HOME/Aaron_libs/Ligands" ) {
         print "Making $HOME/Aaron_libs/Ligands\n";
         system('mkdir -p $HOME/Aaron_libs/Ligands');
     }

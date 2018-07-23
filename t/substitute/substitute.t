@@ -38,8 +38,9 @@ sub trial {
     my $test_name = "Substitute $subs->{target} on $subs->{component}";
     my $rmsd;
     eval {
-        $test->substitute( $subs->{component},
-                           $subs->{target} => $subs->{subs} );
+        $test->substitute(
+            $subs->{component},
+            $subs->{target} => $subs->{subs} );
         pass($test_name);
         1;
     } or do {
@@ -48,6 +49,7 @@ sub trial {
     diag($@) if $@;
 
     eval {
+		$test->printXYZ('result.xyz', '', 1);
         $rmsd = $test->RMSD( ref_geo => $ref );
         ok( $rmsd < 0.2, "RMSD validation" );
         diag("RMSD: $rmsd") if ( $rmsd > 0.2 );

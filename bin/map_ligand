@@ -28,11 +28,12 @@ sub main {
 
         # Printing
         # prints to STDOUT if $outfile == ''
-        my $outfile = _utils::handle_overwrite( $opt{output} )
-          unless $opt{force};
-        _utils::makedirsfor($outfile) if $outfile;
-        print("Saving mapped ligand to $outfile\n") if $outfile;
-        $mapped->printXYZ( $outfile, '', 1 );
+		unless ( $opt{force} ){
+			$opt{output} = _utils::handle_overwrite( $opt{output} );
+		}
+        _utils::mkdirsfor($opt{output}) if $opt{output};
+        print("Saving mapped ligand to $opt{output}\n") if $opt{output};
+        $mapped->printXYZ( $opt{output}, '', 1 );
     }
 
     return 0;

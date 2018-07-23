@@ -53,6 +53,7 @@ sub trial {
         fail("Couldn't map ligand to catalyst");
     };
     diag($@) if $@;
+	return $cata;
 }
 
 sub check_rmsd {
@@ -63,10 +64,10 @@ sub check_rmsd {
         my $ref_backbone  = $ref->ligand()->backbone();
 
         $total_rmsd = $cata->RMSD( ref_geo => $ref );
-        $backbone_rmsd = $cata_backbone->RMSD( ref_geo => $ref_backbone );
+		$backbone_rmsd = $cata_backbone->RMSD_reorder( ref_geo => $ref_backbone );
 
         ok( $total_rmsd < 1.0 && $backbone_rmsd < 0.1,
-            "Mapped structure should match reference." );
+            "RMSD validation" );
         diag("Total RMSD: $total_rmsd");
         diag("Backbone RMSD: $backbone_rmsd");
 
@@ -77,14 +78,14 @@ sub check_rmsd {
     diag($@) if $@;
 }
 
-#my @LIGANDS = ( 'S-SEGPHOS', 'Paton_EL', 'dithiolate-4F', 'squaramide-iPr' );
-my @LIGANDS = ( 'S-SEGPHOS' );
+my @LIGANDS = ( 'R-SEGPHOS', 'Paton_EL', 'dithiolate-4F', 'squaramide-iPr' );
 foreach my $i ( 1 .. @LIGANDS ) {
     my $ligand = $LIGANDS[ $i - 1 ];
 	diag("Testing ligand $ligand");
 
     $i = sprintf( "%02s", $i );
-    trial( "$i/test", "$i/ref", $ligand );
+    my $cata = trial( "$i/test", "$i/ref", $ligand );
+	$cata->printXYZ( "$i/result.xyz", '', 1 );
 
 	diag("\n");
 }
