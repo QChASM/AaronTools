@@ -463,7 +463,6 @@ sub map_ligand {
 
     $self->rebuild();
 
-    print Dumper($self->{constraints});
     #FIXME more atoms case implemented in the furture
 }
 
