@@ -1102,55 +1102,69 @@ sub get_bond {
 #RMSD related part#
 ###################
 sub _sort_conn {
-	# sorts connectivity array based on the maximum connectivity of the atoms
-	# eg: NCH => CNH
-	my ( $geom, $index ) = @_;
+    # sorts connectivity array based on the maximum connectivity of the atoms
+    # eg: NCH => CNH
+    my ( $geom, $index ) = @_;
 
-	my @indicies= @{ $geom->{connection}->[$index] };
-	@indicies = sort {
-		$CONNECTIVITY->{ $geom->{elements}->[$b] }
-		<=>
-		$CONNECTIVITY->{ $geom->{elements}->[$a] }
-	} @indicies;
+    my @indicies = @{ $geom->{connection}->[$index] };
+    @indicies = sort {
+        $CONNECTIVITY->{ $geom->{elements}->[$b] }
+          <=> $CONNECTIVITY->{ $geom->{elements}->[$a] }
+    } @indicies;
 
-	return \@indicies;
+    return \@indicies;
 }
-sub _get_order{
-	# generates an atom order based on connectivity
-	my ($geom, $atoms, $start) = @_;
 
-	# order starts with $start
-	my @order = ($start);
-	# add atoms connected to $start to the stack, sorted
-	my @stack = _sort_conn($geom, $start);
+sub _get_order {
+    # generates an atom order based on connectivity
+    my ( $geom, $atoms, $start ) = @_;
 
-	while ( @stack > 0 ){
-		# get a connectivity array from the front of the stack
-		my $conn = shift @stack;
-		# those atoms aren't already in @order, add them
-		for my $o ( @order ){
-			@$conn = grep { $_ != $o } @$conn;
+    # order starts with $start
+    my @order = ($start);
+    # add atoms connected to $start to the stack, sorted
+    my @stack = _sort_conn( $geom, $start );
+
+	my @atoms_left = @$atoms;
+    while ( @stack > 0 ) {
+        # get a connectivity array from the front of the stack
+        my $conn = shift @stack;
+
+        # if those atoms aren't already in @order, add them
+        for my $o (@order) {
+            @$conn = grep { $_ != $o } @$conn;
+        }
+        push @order, @$conn;
+
+        # push the connectivity arrays of connected atoms to back of stack
+        for my $c (@$conn) {
+            push @stack, _sort_conn( $geom, $c );
+        }
+
+		# if the stack is empty, push a remaining atom onto the stack
+		for my $o ( @order ) {
+			@atoms_left = grep { $_ != $o } @atoms_left;
 		}
-		push @order, @$conn;
-		# push the connectivity arrays of connected atoms to back of stack
-		for my $c ( @$conn ){
-			push @stack, _sort_conn($geom, $c);
+		if ( @stack < 1 && @atoms_left > 0 ){
+			push( @stack, [shift( @atoms_left )] );
 		}
-	}
-	return \@order;
+    }
+    return \@order;
 }
+
 sub _reorder {
-	# generate connectivity-based order for each possible starting atom
-	my $geom = shift;
-	my $atoms = shift;
-	$atoms //= [0..$#{$geom->elements()}];
+    # generate connectivity-based order for each possible starting atom
+    my $geom  = shift;
+    my $atoms = shift;
+    $atoms //= [ 0 .. $#{ $geom->elements() } ];
 
-	my @orders;
-	for my $r ( @$atoms ){
-		if ( $geom->{elements}[$r] eq 'H' ){ next; }
-		push @orders, _get_order($geom, $atoms, $r);
-	}
-	return @orders;
+    my @orders;
+    push @orders, $atoms;
+    for my $r (@$atoms) {
+		# start atoms can only be heavy atoms
+        if ( $geom->{elements}[$r] eq 'H' ) { next; }
+        push @orders, _get_order( $geom, $atoms, $r );
+    }
+    return @orders;
 }
 
 sub RMSD_reorder {
@@ -1165,44 +1179,58 @@ sub RMSD_reorder {
     $atoms1_ref //= [ 0 .. $#{ $self->{elements} } ];
     $atoms2_ref //= [ 0 .. $#{ $geo2->{elements} } ];
 
+	# get possible orderings for each geometry
     my @orders1 = _reorder( $self, $atoms1_ref );
     my @orders2 = _reorder( $geo2, $atoms2_ref );
 
-    my ( $min_rmsd, $min_struct );
-    my ( $geo1,     $rmsd );
-#	my ( $time, $count, $avg_time );
+    my ( $min_rmsd, @min_struct );
+#    my ( $time, $count, $avg_time );
     for my $o1 (@orders1) {
         for my $o2 (@orders2) {
-            $geo1 = $self->copy();
-#			$time = time;
-#			$count++;
-            $rmsd = $geo1->RMSD( ref_geo     => $geo2,
-                                 heavy_atoms => $heavy_only,
-                                 ref_atoms1  => $o1,
-                                 ref_atoms2  => $o2 );
-            if ( !defined $min_rmsd || $rmsd < $min_rmsd ) {
-                $min_rmsd   = $rmsd;
-                $min_struct = $geo1->copy();
+            # test RMSD of first 10 atoms of order
+            my @t1 = @{$o1};
+            @t1 = splice @t1, 0, 10;
+            my @t2 = @{$o2};
+            @t2 = splice @t2, 0, 10;
+            my $test = $self->RMSD( ref_geo     => $geo2,
+                                    heavy_atoms => $heavy_only,
+                                    ref_atoms1  => \@t1,
+                                    ref_atoms2  => \@t2 );
+            # skip ordering if worse than what we've found already
+            if ( defined $min_rmsd && $test > $min_rmsd + 0.5 ) {
+                next;
             }
-#			if ( $avg_time ){
-#				$avg_time = ( $avg_time * ( $count - 1 ) / $count )
-#			}
-#			$avg_time += ( ( time - $time ) / $count );
-#			print Dumper( $avg_time );
+
+#            $time = time;
+#            $count++;
+            my $rmsd = $self->RMSD( ref_geo     => $geo2,
+                                    heavy_atoms => $heavy_only,
+                                    ref_atoms1  => $o1,
+                                    ref_atoms2  => $o2 );
+            if ( !defined $min_rmsd || $rmsd < $min_rmsd ) {
+				# save orders giving good overlap
+                $min_rmsd   = $rmsd;
+                @min_struct = (\@{$o1}, \@{$o2});
+            }
+#            if ($avg_time) {
+#                $avg_time = ( $avg_time * ( $count - 1 ) / $count );
+#            }
+#            $avg_time += ( ( time - $time ) / $count );
+#            print Dumper( $rmsd, $min_rmsd, $avg_time, $count );
         }
     }
-    $self = $min_struct;
-    return $min_rmsd;
+
+	# one last RMSD giving the structure with best overlap
+	return $self->RMSD( ref_geo     => $geo2,
+						heavy_atoms => $heavy_only,
+						ref_atoms1  => $min_struct[0],
+						ref_atoms2  => $min_struct[1] );
 }
 
 sub RMSD{
     my $self = shift;
 
     my %params = @_;
-
-	if ( defined $params{reorder} ){
-		return $self->RMSD_reorder( %params );
-	}
 
     my ( $geo2, $heavy_only, $atoms1_ref, $atoms2_ref ) = ($params{ref_geo},
                                                            $params{heavy_atoms},
@@ -1227,13 +1255,18 @@ sub RMSD{
 		  grep { $atoms2_ref->[$_] !~ /^\d+$/ } ( 0 .. $#{$atoms2_ref} );
 	}
 
-	my $rmsd = $self->_RMSD( $geo2, $heavy_only, $atoms1_ref, $atoms2_ref );
+	my $rmsd;
+	if ( defined $params{reorder} ){
+		$rmsd = $self->RMSD_reorder( %params );
+	} else {
+		$rmsd = $self->_RMSD( $geo2, $heavy_only, $atoms1_ref, $atoms2_ref );
 
-	$self->coord_shift($cen2);
+		$self->coord_shift($cen2);
 
-	for my $i ( 0 .. 2 ) {
-		map { $atoms1_ref->[$_]->[$i] += $cen2->[$i] }
-		  grep { $atoms1_ref->[$_] !~ /^\d+$/ } ( 0 .. $#{$atoms1_ref} );
+		for my $i ( 0 .. 2 ) {
+			map { $atoms1_ref->[$_]->[$i] += $cen2->[$i] }
+			grep { $atoms1_ref->[$_] !~ /^\d+$/ } ( 0 .. $#{$atoms1_ref} );
+		}
 	}
 
 	return $rmsd;
