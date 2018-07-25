@@ -58,8 +58,8 @@ sub grab_coords {
       }
     } elsif ($filename =~ /(\S+)\.xyz/) {         #XYZ file
       while(<INFILE>) {
-        chomp;
-        if($_ =~ /^\s?([a-zA-Z]+)\s+(-?\d+\.?\d*)\s+(-?\d+\.?\d*)\s+(-?\d+\.?\d*)/) {
+        chomp;	#allowing for multiple spaces at start of line in XYZ file
+        if($_ =~ /^\s*([a-zA-Z]+)\s+(-?\d+\.?\d*)\s+(-?\d+\.?\d*)\s+(-?\d+\.?\d*)/) {
           my $coord = [$2, $3, $4];
           push(@coords, $coord);
           push(@atoms, $1);
