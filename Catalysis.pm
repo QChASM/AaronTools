@@ -714,7 +714,6 @@ sub substitute {
 			}
 		}
 	}
-
     for my $inexplicit_sub (@inexplicit_subs) {
         my @subs = grep { $object->{substituents}->{$_}->{name} eq $inexplicit_sub }
                         keys %{ $object->{substituents} };
@@ -1455,11 +1454,8 @@ sub _rearrange_active_con {
 
 	if ($self->{substituents}) {
 		for my $key (sort {$a <=> $b} keys %{ $self->{substituents} }) {
-			if ( exists $old_new->{$self->{substituents}->{$key}} ){
-				if ($old_new->{$self->{substituents}->{$key}->{end}}
-						!= $self->{substituents}->{$key}->{end}) {
-					$self->{substituents}->{$key}->{end} = $old_new->{$self->{substituents}->{$key}->{end}};
-				}
+			if (exists $old_new->{$self->{substituents}->{$key}->{end}} ){
+				$self->{substituents}->{$key}->{end} = $old_new->{$self->{substituents}->{$key}->{end}};
 			}
 			if (exists $old_new->{$key} &&
 				($old_new->{$key} != $key)) {
