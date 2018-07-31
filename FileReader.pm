@@ -83,7 +83,7 @@ sub grab_coords {
             $center = $1 - 1;
         }
         if ($_ =~ /\s+K:(\S+)/ || ($_ =~ /^K:(\S+)/)) {			   #Key atoms (K:14,15)
-            my @temp = split (/;/, $1);
+            my @temp = split (/,/, $1);
             my @key_atoms;
             while (@temp) {
                 my @keys = map { $_ - 1 } split (/,/, shift @temp);
