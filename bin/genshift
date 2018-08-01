@@ -14,63 +14,62 @@ unshift @INC, ("$ENV{'QCHASM'}/AaronTools/bin");
 require _utils;
 
 sub main {
-    my $files = shift;
-    my %opt   = @_;
+    my $file = shift;
+    my %opt  = @_;
+    my $vector;
+    my $nshift;
 
-    # perform coord_shift for each file
-    foreach my $file ( @{$files} ) {
-        my $geom = _utils::get_geom($file);
-        next unless $geom;
+    my $geom = _utils::get_geom($file);
+    return 1 unless $geom;
 
-        my $nshift = 0;
-        my $vector = V( @{ $opt{vector} } );
-        while ( $nshift < $opt{nshift} ) {
-            # shift target atoms if specified, defaults to all atoms
-            if ( @{ $opt{targets} } ) {
-                $geom->coord_shift( $vector, $opt{targets} );
-            } else {
-                $geom->coord_shift($vector);
-            }
-
-            # increase repeat count
-            $nshift += 1;
-
-           # Printing
-           # Get shift vector (adjust for previous shifts if multiple requested)
-            my @v;
-            for ( my $i = 0; $i < @{ $opt{vector} }; $i++ ) {
-                push @v, $opt{vector}[$i] * $nshift;
-            }
-
-            # generate outfile name and comment string
-            my $outfile = _utils::get_outfile( $file, $opt{write},
-                                               [ 'shift', join( '_', @v ) ] );
-            my $comment = _utils::strip_dir($file);
-            $comment .= '   Shifted by (' . join( ',', @v ) . ')';
-
-            # prints to STDOUT if $outfile == ''
-            _utils::mkdirsfor($outfile)  if $outfile;
-            print("Saved to $outfile\n") if $outfile;
-            $geom->printXYZ( $outfile, $comment, 1 );
-            print("\n") unless $outfile;
-        }
+    if ( @{ $opt{vector} } == 1 ) {
+        $vector = $geom->get_point( $opt{vector}->[0] - 1 );
+        $vector *= -1;
+    } elsif ( @{ $opt{vector} } == 2 ) {
+        $vector = $geom->get_point( $opt{vector}->[0] - 1 ) / 2;
+        $vector += $geom->get_point( $opt{vector}->[1] - 1 ) / 2;
+        $vector *= -1;
+    } else {
+        $vector = V( @{ $opt{vector} } );
     }
+
+    # shift target atoms if specified, defaults to all atoms
+    if ( @{ $opt{targets} } ) {
+        $geom->coord_shift( $vector, $opt{targets} );
+    } else {
+        $geom->coord_shift($vector);
+    }
+
+    # Printing
+    my $comment = _utils::strip_dir($file);
+    if ( @{ $opt{vector} } == 1 ) {
+        $comment .= "   Centered atom $opt{vector}->[0]";
+    } elsif ( @{ $opt{vector} } == 2 ) {
+        $comment .= "   Centered " . join( '-', @{ $opt{vector} } ) . " bond";
+    } else {
+        $comment .= '   Shifted by (' . join( ',', @{$vector} ) . ')';
+    }
+
+    # prints to STDOUT if $outfile == ''
+    unless ( $opt{force} ) {
+        $opt{output} = _utils::handle_overwrite( $opt{output} );
+    }
+    _utils::mkdirsfor( $opt{output} ) if $opt{output};
+    print("Saving updated geometry to $opt{output}\n") if $opt{output};
+    $geom->printXYZ( $opt{output}, $comment, 1 );
 }
 
 # read in options
 my %opt;
 my @vector;
 my @targets;
-$opt{help}    = '';
-$opt{vector}  = \@vector;
-$opt{nshift}  = 1;
-$opt{targets} = \@targets;
-$opt{write}   = '-';         # '-' indicates no write, '' indicates write to cwd
-GetOptions( 'help|h'         => \$opt{help},
-            'vector|v=f{3}'  => \@vector,
-            'nshift|n:i'     => \$opt{nshift},
-            'targets|t:i{,}' => \@targets,
-            'write|w:s'      => \$opt{write} )
+$opt{help}   = '';
+$opt{vector} = \@vector;
+GetOptions( 'help|h'          => \$opt{help},
+            'vector|v=f{1,3}' => \@vector,
+            'targets|t:s'     => \$opt{targets},
+            'force|f'         => \$opt{force},
+            'output|o:s'      => \$opt{output} )
   or pod2usage(
     { -exitval => 1,
       -verbose => 1
@@ -84,45 +83,48 @@ pod2usage(
       -verbose => 1
     } ) unless ( @ARGV > 0 and @{ $opt{vector} } );
 
-pod2usage(
-    { -message => "Number of repeats must be a positive integer.\n",
-      -exitval => 1,
-      -verbose => 1
-    } ) if ( $opt{nshift} < 0 );
-
 # targets supplied as 1-indexed, Aaron uses 0-indexing
+if ( defined $opt{targets} ) {
+    my @targets;
+    for my $t ( split /,/, $opt{targets} ) {
+        my @trange = split /-/, $t;
+        if ( @trange == 2 ) {
+            push @targets, ( $trange[0] .. $trange[1] );
+        } else {
+            push @targets, $trange[0];
+        }
+    }
+    $opt{targets} = \@targets;
+}
 foreach my $t ( @{ $opt{targets} } ) {
     $t -= 1;
 }
 
-&main( \@ARGV, %opt );
+&main( $ARGV[0], %opt );
 
 =pod
 
 =head1 SYNOPSIS
 
-genshift [options] -v x y z file1 [file2, file3, ...]
+genshift [options] -v (x y z | a) file
 
 =head1 OPTIONS
 
 =over
 
-=item B<-v x y z>, B<--vector x y z>
+=item B<-v (x y z | a | a1 a2)>, B<--vector (x y z | a | a1 a2)>
 
-Shift the molecule (or target fragment) by the vector (x, y, z)
-
-=item B<-n num>, B<--nshift num>
-
-Repeat the shift n times
+Shift the molecule (or target fragment) by the vector (x, y, z),
+or center a specified atom (a) or bond (a1 a2) to the origin (1-indexed)
 
 =item B<-t list>, B<--targets list>
 
 List of atom numbers to shift (1-indexed). Defaults to all atoms.
 
-=item B<-w [directory]>, B<--write [directory]>
+=item B<-o outfile -f>, B<--output outfile --force>
 
-Write new geometry output to INFILE-NAME_shift_VECTOR.xyz instead of STDOUT.
-Directory defaults to current working directory.
+Write updated geometry to outfile,
+optionally forcing overwrite if the file already exists.
 
 =item B<-h>, B<--help>
 
