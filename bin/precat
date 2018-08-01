@@ -29,7 +29,7 @@ sub main {
         }
     }
 
-    $cat->printXYZ( $opt{outfile} );
+    $cat->printXYZ( $opt{outfile}, '', 1 );
 }
 
 my $helpMsg =
