@@ -18,34 +18,29 @@ sub main {
     my $refgeom = _utils::get_cat($reffile);
     return 1 unless $refgeom;
 
-    foreach my $targetfile ( @{ $opt{ligand} } ) {
-        my $ligand = _utils::get_lig($targetfile);
-        next unless $ligand;
+    my $ligand = _utils::get_lig( $opt{ligand} );
+    return 1 unless $ligand;
 
-        # perform map ligand
-        my $mapped = $refgeom->copy();
-        $mapped->map_ligand($ligand);
+    # perform map ligand
+    my $mapped = $refgeom->copy();
+    $mapped->map_ligand($ligand);
 
-        # Printing
-        # prints to STDOUT if $outfile == ''
-		unless ( $opt{force} ){
-			$opt{output} = _utils::handle_overwrite( $opt{output} );
-		}
-        _utils::mkdirsfor($opt{output}) if $opt{output};
-        print("Saving mapped ligand to $opt{output}\n") if $opt{output};
-        $mapped->printXYZ( $opt{output}, '', 1 );
+    # Printing
+    # prints to STDOUT if $outfile == ''
+    unless ( $opt{force} ) {
+        $opt{output} = _utils::handle_overwrite( $opt{output} );
     }
+    _utils::mkdirsfor( $opt{output} ) if $opt{output};
+    print("Saving mapped ligand to $opt{output}\n") if $opt{output};
+    $mapped->printXYZ( $opt{output}, '', 1 );
 
     return 0;
 }
 
 # read in options
 my %opt;
-my @ligand_geoms;
-$opt{help}   = '';
-$opt{ligand} = \@ligand_geoms;
 GetOptions( 'help|h'     => \$opt{help},
-            'ligand|l=s' => \@ligand_geoms,
+            'ligand|l=s' => \$opt{ligand},
             'force|f'    => \$opt{force},
             'output|o=s' => \$opt{output} )
   or pod2usage(
@@ -60,10 +55,10 @@ pod2usage(
       -verbose => 1
     } ) unless ( $ARGV[0] );
 pod2usage(
-    { -message => "Please provide at least one ligand geometry",
+    { -message => "Please provide a ligand geometry",
       -exitval => 1,
       -verbose => 1
-    } ) unless ( @ligand_geoms > 0 );
+    } ) unless ( $opt{ligand} );
 
 &main( $ARGV[0], %opt );
 
@@ -71,7 +66,7 @@ pod2usage(
 
 =head1 SYNOPSIS
 
-map_ligand [options] reference_structure -l target_ligand [second_target ...]
+map_ligand [options] reference_structure -l target_ligand
 
 =head1 OPTIONS
 
@@ -79,8 +74,9 @@ map_ligand [options] reference_structure -l target_ligand [second_target ...]
 
 =item B<-l target_ligand>, B<--ligand target_ligand>
 
-Specify ligands to map to reference structure. Multiple ligands can be specified.
-May be xyz file or name of AARON built-in.
+Specify ligands to map to reference structure.
+Must be an Aaron ligand xyz file.
+Use libadd_ligand to add new ligands to your personal library.
 
 =item B<-o FILENAME [-f]>, B<--output FILENAME [--force]>
 

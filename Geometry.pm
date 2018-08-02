@@ -1220,6 +1220,13 @@ sub RMSD_reorder {
         }
     }
 
+#	# print matching atoms
+#	my @tmp;
+#	for ( my $i = 0; $i < @{ $min_struct[0] } && $i < @{ $min_struct[1] }; $i++ ){
+#		push @tmp, "$min_struct[0]->[$i]" . "-" . "$min_struct[1]->[$i]";
+#	}
+#	print Dumper( \@tmp );
+
 	# one last RMSD giving the structure with best overlap
 	return $self->RMSD( ref_geo     => $geo2,
 						heavy_atoms => $heavy_only,
@@ -1239,26 +1246,32 @@ sub RMSD{
     $heavy_only //= 0;
     $atoms1_ref //= [ 0 .. $#{ $self->{elements} } ];
     $atoms2_ref //= [ 0 .. $#{ $geo2->{elements} } ];
-
-	my $cen1 = $self->get_center($atoms1_ref);
-	my $cen2 = $geo2->get_center($atoms2_ref);
-
-	$geo2 = $geo2->copy();
-
-	$self->coord_shift( -1 * $cen1 );
-	$geo2->coord_shift( -1 * $cen2 );
-
-	for my $i ( 0 .. 2 ) {
-		map { $atoms1_ref->[$_]->[$i] -= $cen1->[$i] }
-		  grep { $atoms1_ref->[$_] !~ /^\d+$/ } ( 0 .. $#{$atoms1_ref} );
-		map { $atoms2_ref->[$_]->[$i] -= $cen2->[$i] }
-		  grep { $atoms2_ref->[$_] !~ /^\d+$/ } ( 0 .. $#{$atoms2_ref} );
+	if ( @$atoms2_ref > @$atoms1_ref ){
+		@$atoms2_ref = splice @$atoms2_ref, 0, @$atoms1_ref;
+	} elsif ( @$atoms2_ref < @$atoms1_ref ){
+		@$atoms1_ref = splice @$atoms1_ref, 0, @$atoms2_ref ;
 	}
 
 	my $rmsd;
 	if ( defined $params{reorder} && $params{reorder} ){
 		$rmsd = $self->RMSD_reorder( %params );
+		return $rmsd;
 	} else {
+		my $cen1 = $self->get_center($atoms1_ref);
+		my $cen2 = $geo2->get_center($atoms2_ref);
+
+		$geo2 = $geo2->copy();
+
+		$self->coord_shift( -1 * $cen1 );
+		$geo2->coord_shift( -1 * $cen2 );
+
+		for my $i ( 0 .. 2 ) {
+			map { $atoms1_ref->[$_]->[$i] -= $cen1->[$i] }
+			grep { $atoms1_ref->[$_] !~ /^\d+$/ } ( 0 .. $#{$atoms1_ref} );
+			map { $atoms2_ref->[$_]->[$i] -= $cen2->[$i] }
+			grep { $atoms2_ref->[$_] !~ /^\d+$/ } ( 0 .. $#{$atoms2_ref} );
+		}
+
 		$rmsd = $self->_RMSD( $geo2, $heavy_only, $atoms1_ref, $atoms2_ref );
 
 		$self->coord_shift($cen2);
@@ -1267,9 +1280,9 @@ sub RMSD{
 			map { $atoms1_ref->[$_]->[$i] += $cen2->[$i] }
 			grep { $atoms1_ref->[$_] !~ /^\d+$/ } ( 0 .. $#{$atoms1_ref} );
 		}
+		return $rmsd;
 	}
 
-	return $rmsd;
 }
 
 sub MSD {
@@ -1295,9 +1308,6 @@ sub _RMSD {
     my $matrix = new Math::MatrixReal(4,4);
 
     for my $atom (0..$#{$atoms1_ref}) {
-		if ( $atom > $#{$atoms2_ref} ){
-			last;
-		}
         if ($atoms1_ref->[$atom] =~ /^\d+$/ &&
             ($atoms2_ref->[$atom] =~ /^\d+$/) &&
             $heavy_only) {

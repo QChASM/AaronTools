@@ -23,7 +23,7 @@ push @args,
   { args    => '01/test.xyz -v 1 2 -a 3.1415926535 -r',
     message => 'Single rotation (bond)',
     ref     => '01/ref_bond-rot-180.xyz',
-    rmsd    => 1 * 10**(-5) };
+    rmsd    => 10**(-5) }; # rmsd allowance higher due to radain conversion
 push @args,
   { args    => '01/test.xyz -v 1 2 -n 6 -w 01/n6',
     message => 'Multiple equal rotations',

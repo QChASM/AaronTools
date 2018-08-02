@@ -497,8 +497,7 @@ sub _map_ligand {
     my $ref1_center = shift @key_atoms1;
     my $ref2_center = shift @key_atoms2;
     if (@$ref1_center != @$ref2_center) {
-        warn("reference atom number not equal for ligand map!\n");
-        next;
+        die("reference atom number not equal for ligand map!\n");
     }
 
     $ref1_center = $self->_map_center($ligand, $ref1_center, $ref2_center);

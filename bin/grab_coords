@@ -28,8 +28,6 @@ sub main {
 }
 
 my %opt;
-$opt{help}   = '';
-$opt{output} = '';
 GetOptions( 'help|h'     => \$opt{help},
             'force|f'    => \$opt{force},
             'output|o=s' => \$opt{output} )
@@ -43,11 +41,6 @@ pod2usage(
       -exitval => 1,
       -verbose => 1
     } ) if @ARGV < 1;
-
-if ( $opt{force} ) {
-    $opt{output} = $opt{force};
-    $opt{force}  = 1;
-}
 
 &main( \%opt, @ARGV );
 

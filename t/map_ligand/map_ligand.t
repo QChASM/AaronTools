@@ -64,9 +64,9 @@ sub check_rmsd {
         my $ref_backbone  = $ref->ligand()->backbone();
 
         $total_rmsd = $cata->RMSD( ref_geo => $ref );
-		$backbone_rmsd = $cata_backbone->RMSD_reorder( ref_geo => $ref_backbone );
+		$backbone_rmsd = $cata_backbone->RMSD( ref_geo => $ref_backbone );
 
-        ok( $total_rmsd < 1.0 && $backbone_rmsd < 0.1,
+        ok( $total_rmsd < 0.5 && $backbone_rmsd < 10**(-5),
             "RMSD validation" );
         diag("Total RMSD: $total_rmsd");
         diag("Backbone RMSD: $backbone_rmsd");

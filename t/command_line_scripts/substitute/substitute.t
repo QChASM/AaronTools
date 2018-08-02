@@ -19,25 +19,31 @@ push @args,
     message => 'Available flag' };
 push @args,
   { args    => '01/methane.xyz -s 1=OH',
-    message => 'Simple' };
+    message => 'Simple',
+    ref     => '01/ref.xyz',
+    reorder => 1,
+    rmsd    => 10**(-5) };
 push @args,
-  { args    => '01/methane.xyz -s 1=OH -o 01/test.xyz -f',
+  { args    => '01/methane.xyz -s 1=OH',
     ref     => '01/ref.xyz',
     out     => '01/test.xyz',
-    rmsd    => 0.2,
+    rmsd    => 10**(-5),
+    reorder => 1,
     message => 'with output file' };
 push @args,
-  { args    => '02/methanol.xyz -s 3,4,5=Me -o 02/test.xyz -f',
+  { args    => '02/methanol.xyz -s 3,4,5=Me',
     ref     => '02/ref.xyz',
     out     => '02/test.xyz',
-    rmsd    => 0.2,
+    rmsd    => 10**(-5),
+    reorder => 1,
     message => 'multiple targets' };
 push @args,
-  { args    => '03/tBuOH.xyz -s 4=Et 1,3=Cl -o 03/test.xyz -f',
+  { args    => '03/tBuOH.xyz -s 1,3=Cl 4=Et -m',
     ref     => '03/ref.xyz',
     out     => '03/test.xyz',
     rmsd    => 0.2,
-    message => 'multiple targets and substituents' };
+    reorder => 1,
+    message => 'multiple targets and substituents, with minimize' };
 
 foreach my $a (@args) {
     helper::trial( $cmd, $a );

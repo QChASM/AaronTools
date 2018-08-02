@@ -73,7 +73,8 @@ sub test_rmsd {
     my $test      = shift;
     my $ref       = shift;
     my $threshold = shift;
-    my $reorder   = 0;
+    my $reorder   = shift;
+    $reorder //= 0;
 
     # handle lists of files produced by things like cat_screen
     my ( @ref, @test );

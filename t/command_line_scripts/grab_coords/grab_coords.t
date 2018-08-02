@@ -27,7 +27,7 @@ push @args,
     ref     => '01/ref.xyz',
     message => 'xyz file read' };
 push @args,
-  { args    => '01/test.xyz -o 01/testout.xyz -f',
+  { args    => '01/test.xyz',
     ref     => '01/ref.xyz',
     out     => '01/testout.xyz',
     message => 'output flag' };
