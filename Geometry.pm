@@ -1189,15 +1189,15 @@ sub RMSD_reorder {
         for my $o2 (@orders2) {
             # test RMSD of first 10 atoms of order
             my @t1 = @{$o1};
-            @t1 = splice @t1, 0, 10;
+            @t1 = splice @t1, 0, 8;
             my @t2 = @{$o2};
-            @t2 = splice @t2, 0, 10;
+            @t2 = splice @t2, 0, 8;
             my $test = $self->RMSD( ref_geo     => $geo2,
                                     heavy_atoms => $heavy_only,
                                     ref_atoms1  => \@t1,
                                     ref_atoms2  => \@t2 );
             # skip ordering if worse than what we've found already
-            if ( defined $min_rmsd && $test > $min_rmsd + 0.5 ) {
+            if ( defined $min_rmsd && $test > $min_rmsd ) {
                 next;
             }
 
@@ -1256,7 +1256,7 @@ sub RMSD{
 	}
 
 	my $rmsd;
-	if ( defined $params{reorder} ){
+	if ( defined $params{reorder} && $params{reorder} ){
 		$rmsd = $self->RMSD_reorder( %params );
 	} else {
 		$rmsd = $self->_RMSD( $geo2, $heavy_only, $atoms1_ref, $atoms2_ref );

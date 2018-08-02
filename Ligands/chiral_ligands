@@ -29,6 +29,14 @@ SS-QuinoxP	(S,S)-QuinoxP*	(from DOI: 10.1038/s41467-018-04693-9)
 RRSS-DuanPhos	(1R,1'R,2S,2'S)-DuanPhos	(from DOI: 10.1021/om500329q)
 SSRR-DuanPhos	(1S,1'S,2R,2'R)-DuanPhos	(from DOI: 10.1021/om500329q)
 R-ipr-Ph-BOX.xyz	(+)-2,2′-Isopropylidenebis[(4R)-4-phenyl-2-oxazoline]	(from DOI: 10.1002/1521-3765(20020415)8:8<1888::AID-CHEM1888>3.0.CO;2-9)
+R-ipr-Ph-BOX.xyz	2,2′-Isopropylidenebis[(4R)-4-phenyl-2-oxazoline]	(from DOI: 10.1002/1521-3765(20020415)8:8<1888::AID-CHEM1888>3.0.CO;2-9)
+S-ipr-Ph-BOX.xyz	2,2′-Isopropylidenebis[(4S)-4-phenyl-2-oxazoline]	
+R-me-Ph-BOX.xyz	2,2′-Methylenebis[(4R)-4-phenyl-2-oxazoline]	
+S-me-Ph-BOX.xyz	2,2′-Methylenebis[(4S)-4-phenyl-2-oxazoline]	
+R-ipr-tBu-BOX.xyz	2,2′-Isopropylidenebis[(4R)-4-tert-butyl-2-oxazoline]	
+S-ipr-tBu-BOX.xyz	2,2′-Isopropylidenebis[(4S)-4-tert-butyl-2-oxazoline]	
+R-iPr-PyBOX.xyz	2,6-Bis[4'-(R)-isopropyloxazolin-2'-yl]pyridine	(from DOI: 10.1021/ic9813258)
+S-iPr-PyBOX.xyz	2,6-Bis[4'-(S)-isopropyloxazolin-2'-yl]pyridine	(from DOI: 10.1021/ic9813258)
 R-StackPhos	(R)-StackPhos
 S-StackPhos	(S)-StackPhos
 R-pFPh-StackPhos	(R)-p-FPh-StackPhos

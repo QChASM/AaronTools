@@ -59,7 +59,7 @@ pod2usage(
       -verbose => 1
     } ) unless ( $opt{axis} =~ m/[xXyYzZ]/ );
 
-&main( \@ARGV, %opt );
+&main( $ARGV[0], %opt );
 
 =pod
 

@@ -17,7 +17,12 @@ sub trial {
     my $args = shift;
     my ( $err, $test, $ref, $success );
 
-    system "$cmd $args->{args} 2>stderr.tmp 1>stdout.tmp";
+    if ( defined $args->{out} ) {
+        system
+          "$cmd $args->{args} -o $args->{out} -f 2>stderr.tmp 1>stdout.xyz";
+    } else {
+        system "$cmd $args->{args} 2>stderr.tmp 1>stdout.xyz";
+    }
     ok( !$?, "$args->{message}: $args->{args}" );
     open $err, '<', 'stderr.tmp';
     diag(<$err>) if $?;
@@ -25,10 +30,10 @@ sub trial {
 
     if ( defined $args->{ref} ) {
         unless ( defined $args->{out} ) {
-            $args->{out} = 'stdout.tmp';
+            $args->{out} = 'stdout.xyz';
         }
 
-        if ( $args->{rmsd} ) {
+        if ( defined $args->{rmsd} ) {
             $success = test_rmsd( $args->{out}, $args->{ref}, $args->{rmsd},
                                   $args->{reorder} );
         } else {
@@ -46,7 +51,7 @@ sub trial {
 
     }
 
-    system "rm stdout.tmp stderr.tmp";
+    system "rm stdout.xyz stderr.tmp";
 }
 
 sub test_file_contents {
@@ -70,22 +75,50 @@ sub test_rmsd {
     my $threshold = shift;
     my $reorder   = 0;
 
-    my $rmsd;
+    # handle lists of files produced by things like cat_screen
+    my ( @ref, @test );
     eval {
-        $test = new AaronTools::Geometry( name => $test =~ /(.*)\.xyz/ );
-        $ref  = new AaronTools::Geometry( name => $ref =~ /(.*)\.xyz/ );
-
-        $rmsd = $test->RMSD( ref_geo => $ref, reorder => $reorder );
+        if ( -d $ref ) {
+            opendir my ($d), $ref;
+            @ref = readdir $d;
+            @ref = grep { $_ =~ /ref.*\.xyz/ } @ref;
+            @ref = map { $ref . '/' . $_ } @ref;
+            closedir $d;
+            for my $r (@ref) {
+                my $t = $r;
+                $t =~ s/ref/test/;
+                push @test, $t;
+            }
+        } else {
+            @ref  = ($ref);
+            @test = ($test);
+        }
         1;
     } or do {
         return $@;
     };
 
-    diag("RMSD: $rmsd");
-    if ( $rmsd < $threshold ) {
-        return 1;
+    for ( my $i = 0; $i < @ref; $i++ ) {
+        my $ref  = $ref[$i];
+        my $test = $test[$i];
+        my $rmsd;
+
+        eval {
+            $test = new AaronTools::Geometry( name => $test =~ /(.*)\.xyz/ );
+            $ref  = new AaronTools::Geometry( name => $ref =~ /(.*)\.xyz/ );
+
+            $rmsd = $test->RMSD( ref_geo => $ref, reorder => $reorder );
+            1;
+        } or do {
+            return $@;
+        };
+
+        diag("RMSD: $rmsd");
+        if ( $rmsd > $threshold ) {
+            return 0;
+        }
     }
-    return 0;
+    return 1;
 }
 
 1;
