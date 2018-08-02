@@ -1,18 +1,15 @@
-DPEphos	DPEphos	(from DOI: 10.1021/om201034m)
-JoshPhos	tBu-Joshphos	(from DOI: 10.1021/ol5027798)
 RR-Me-BPE	(R,R)-Me-BPE
 SS-Me-BPE	(S,S)-Me-BPE
 R-BINAP	(R)-BINAP	(from DOI: 10.1021/ja039103i)
 S-BINAP	(S)-BINAP	(from DOI: 10.1021/ja039103i)
-Xantphos	Xantphos	(from DOI: 10.1021/om201034m)
 R-SEGPHOS	(R)-SEGPHOS
 S-SEGPHOS	(S)-SEGPHOS
-RR-Et-DUPhos	(R,R)-iEt-DUPHOS	(from DOI: 10.1016/j.jorganchem.2007.10.005)
-SS-Et-DUPhos	(S,S)-iEt-DUPHOS	(from DOI: 10.1016/j.jorganchem.2007.10.005)
-RR-Me-DUPhos	(R,R)-iMe-DUPHOS	(from DOI: 10.1016/j.jorganchem.2007.10.005)
-SS-Me-DUPhos	(S,S)-iMe-DUPHOS	(from DOI: 10.1016/j.jorganchem.2007.10.005)
-RR-iPr-DUPhos	(R,R)-iPr-DUPHOS	(from DOI: 10.1016/j.jorganchem.2007.10.005)
-SS-iPr-DUPhos	(S,S)-iPr-DUPHOS	(from DOI: 10.1016/j.jorganchem.2007.10.005)
+RR-Et-DuPhos	(R,R)-iEt-DuPHOS	(from DOI: 10.1016/j.jorganchem.2007.10.005)
+SS-Et-DuPhos	(S,S)-iEt-DuPHOS	(from DOI: 10.1016/j.jorganchem.2007.10.005)
+RR-Me-DuPhos	(R,R)-iMe-DuPHOS	(from DOI: 10.1016/j.jorganchem.2007.10.005)
+SS-Me-DuPhos	(S,S)-iMe-DuPHOS	(from DOI: 10.1016/j.jorganchem.2007.10.005)
+RR-iPr-DuPhos	(R,R)-iPr-DuPHOS	(from DOI: 10.1016/j.jorganchem.2007.10.005)
+SS-iPr-DuPhos	(S,S)-iPr-DuPHOS	(from DOI: 10.1016/j.jorganchem.2007.10.005)
 R-Quinox-AdtBu2	(R)-Quinox-AdtBu2	(from DOI: 10.1038/s41467-018-04693-9)
 S-Quinox-AdtBu2	(S)-Quinox-AdtBu2	(from DOI: 10.1038/s41467-018-04693-9)
 R-Quinox-tBu3	(R)-Quinox-tBu3
@@ -29,7 +26,5 @@ RR-norphos	(2R,3R)-(−)-2,3-Bis(diphenylphosphino)bicyclo[2.2.1]hept-5-ene ((-)
 SS-norphos	(2S,3S)-(−)-2,3-Bis(diphenylphosphino)bicyclo[2.2.1]hept-5-ene ((+)-Norphos)
 RR-QuinoxP	(R,R)-QuinoxP*	(from DOI: 10.1038/s41467-018-04693-9)
 SS-QuinoxP	(S,S)-QuinoxP*	(from DOI: 10.1038/s41467-018-04693-9)
-SL-J212-1	SL-J212-1	(from DOI:  10.1021/om500329q)
-SL-J212-2	SL-J212-2	(from DOI:  10.1021/om500329q)
 RRSS-DuanPhos	(1R,1'R,2S,2'S)-DuanPhos	(from DOI: 10.1021/om500329q)
 SSRR-DuanPhos	(1S,1'S,2R,2'R)-DuanPhos	(from DOI: 10.1021/om500329q)
