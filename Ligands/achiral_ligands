@@ -15,7 +15,7 @@ tBu-PNP		tetra(t-butyl)-2,6-bis(diphosphino)pyridine	(from DOI: 10.1021/ic901032
 iPr-NC3C	2,3-di(bisisopropylamino) cyclopropyl carbene	(&prime;8&prime; from DOI: 10.1021/ja202007s)
 Mes-NC5C	(N,N&prime;)-bis(mesityl) imidazolidinyl carbene	(&prime;6a&prime; from DOI: 10.1021/ja202007s)
 iPrPh-NC5C	(N,N&prime;)-bis(2,6-diisopropylphenyl) imidazolidinyl carbene	(&prime;6b&prime; from DOI: 10.1021/ja202007s)
-Mes-HC5C	(N,N&prime;)-bis(mesityl) dihydroimidazolyl carbene	(&prime;5b&prime; from DOI: 10.1021/ja202007s)
+IMes	1,3-Dimesitylimidazol-2-ylidene	(&prime;5b&prime; from DOI: 10.1021/ja202007s)
 Ad-HC5C		(N,N&prime;)-bis(adamantyl) dihydroimidazolyl	carbene	(&prime;5c&prime; from DOI: 10.1021/ja202007s)
 iPrPh-BIP	(N,N&prime;)-bis(2,6-diisoproylphenyl)imino pyridine	(from DOI: 10.1039/b107490c)
 EDA	ethylene diamine
@@ -33,3 +33,5 @@ SL-J212-2	SL-J212-2	(from DOI:  10.1021/om500329q)
 PyrOx	PyrOx
 PymdOx	PymdOx
 BiOX	Bioxazoline (Reisman)
+BDA	2,2'-bipyridine-6,6'-dicarboxylate
+KASBAI	2,6-dicyclohexyl-4-(2,4,6-trimethylphenyl)-3,5-diphenyl-2,4,6-triaza-3,5-diborinanylidene	(from DOI: 10.1021/ja052987g)
