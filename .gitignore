@@ -1,0 +1,7 @@
+t/*/*/result.xyz
+t/command_line_scripts/cat_screen/**/test_*.xyz
+t/command_line_scripts/cat_substitute/**/test_*.xyz
+t/command_line_scripts/dihedral/01/test_*.xyz
+t/command_line_scripts/genrotate/**/test_*.xyz
+t/command_line_scripts/grab_coords/*/testout.xyz
+t/command_line_scripts/grab_thermo/*/test.csv
