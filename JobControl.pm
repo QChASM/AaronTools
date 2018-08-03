@@ -68,7 +68,7 @@ sub findJob {
     	return @jobIDs;
     }
     return;
-} #end sub findJob
+}
 
 
 sub killJob {
@@ -84,7 +84,7 @@ sub killJob {
    }
    sleep(3);
    return $rv;
-} #end kill_job;
+}
 
 
 #Works for LSF or PBS (default)
