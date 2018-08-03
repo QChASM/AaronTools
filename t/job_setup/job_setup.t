@@ -49,16 +49,20 @@ if ($submit_fail) {
     sleep(10);
 }
 
-my $job_found = findJob("$ENV{PWD}");
+my ($job_found) = findJob("$ENV{PWD}");
 ok( $job_found, "Find job" );
 if ($job_found) {
 	my $failed_to_kill;
     eval {
-        killJob($job_found);
-        pass("Killing job $job_found...");
-        sleep(5);
-		$failed_to_kill = findJob("$QCHASM/t/job_setup");
-		$failed_to_kill ? 0 : 1;
+        my $status = killJob($job_found);
+		# status is exit status of qdel, etc.
+		# should be 0 if success, non 0 otherwise
+        ok( !$status, "Kill job $job_found..." );
+		($failed_to_kill) = findJob("$QCHASM/t/job_setup");
+		# if job still found in the queue, FAIL
+		# else, if $status != 0, FAIL
+		# else, PASS
+		$failed_to_kill ? 0 : 1 && !$status;
     } or do {
         fail(   "Cound not kill job submitted to the queue. "
               . "Please find the job and kill it manually. "
