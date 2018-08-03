@@ -84,7 +84,11 @@ sub split_atom_string {
     for my $as ( split /,/, $atomstring ) {
         if ( $as =~ /-/ ) {
             my @tmp = split /-/, $as;
-            push @res, ( $tmp[0] .. $tmp[1] );
+			if ( $tmp[0] < $tmp[1] ) {
+				push @res, ( $tmp[0] .. $tmp[1] );
+			} else {
+				push( @res, reverse ( $tmp[1] .. $tmp[0] ) );
+			}
         } else {
             push @res, $as;
         }
