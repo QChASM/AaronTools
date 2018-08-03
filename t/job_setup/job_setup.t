@@ -20,7 +20,7 @@ eval {
 };
 
 my $wall = 2;
-my $n_procs = 4;
+my $n_procs = 2;
 my $node = 1;
 
 my $template_job;
