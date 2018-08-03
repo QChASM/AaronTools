@@ -21,7 +21,6 @@ eval {
 
 my $wall = 2;
 my $n_procs = 2;
-my $node = 1;
 
 my $template_job;
 eval {
@@ -36,8 +35,7 @@ eval {
 my $submit_fail = submit_job( com_file     => 'test.com',
                               walltime     => $wall,
                               numprocs     => $n_procs,
-                              template_job => $template_job,
-                              node         => $node );
+                              template_job => $template_job );
 ok( !$submit_fail, "Testing job submission" );
 if ($submit_fail) {
     die "Failed to submit test job to the queue.\n"

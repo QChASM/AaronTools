@@ -1,6 +1,7 @@
 template.job
 t/*/*/result.xyz
 t/job_setup/test.job
+t/substitute/result.xyz
 t/command_line_scripts/cat_screen/**/test_*.xyz
 t/command_line_scripts/cat_substitute/**/test_*.xyz
 t/command_line_scripts/substitute/*/test*.xyz

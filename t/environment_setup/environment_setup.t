@@ -16,9 +16,14 @@ ok( -f "$QCHASM/Aaron/.aaronrc",
     "$QCHASM/Aaron/.aaronrc should exist for storing group-specific configuration details."
 );
 
-ok( -f "$ENV{HOME}/.aaronrc",
-    "$ENV{HOME}/.aaronrc should exist for storing user-specific configuration details."
-);
+if ( -f "$ENV{HOME}/.aaronrc" ) {
+    pass("$ENV{HOME}/.aaronrc exists");
+} else {
+    diag(
+        "WARNING: $ENV{HOME}/.aaronrc not found. " .
+		"This is optional, but useful for storing user-specific configuration details."
+    );
+}
 
 ok( $ENV{PERL_LIB},
     "PERL_LIB environmental variable should be set to the appropriate path." );
