@@ -74,14 +74,16 @@ sub findJob {
 sub killJob {
     my ($job) = @_;
 
+	my $rv;
     if ($queue_type =~ /LSF/i) {
-        system("bkill $job");
+        $rv = system("bkill $job");
     }elsif ($queue_type =~ /PBS/i) {
-        system("qdel $job");
+        $rv = system("qdel $job");
     }elsif ($queue_type =~ /Slurm/i) {
-        system("scancel $job");
+        $rv = system("scancel $job");
    }
    sleep(3);
+   return $rv;
 } #end kill_job;
 
 
