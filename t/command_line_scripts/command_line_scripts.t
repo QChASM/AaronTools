@@ -23,7 +23,8 @@ my @tests = (
 	'cat_substitute',
 	'map_ligand',
 	'libadd_ligand',
-	'libadd_substituent'
+	'libadd_substituent',
+	'follow'
 );
 
 # run each test
