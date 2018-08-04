@@ -118,9 +118,9 @@ unless ( $opt{radians} ) {
 
 =head1 SYNOPSIS
 
-rotate [options] -x x|y|z -a angle [-n repeat] file [file2 file3 ...]
+rotate [options] -x x|y|z -a angle [-n repeat] file
 
-rotate [options] -x x|y|z -n rotations file [file2 file3 ...]
+rotate [options] -x x|y|z -n rotations file
 
 =head1 OPTIONS
 

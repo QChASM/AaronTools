@@ -116,9 +116,7 @@ if ($targetatoms) {
 
 =head1 SYNOPSIS
 
-rmsd_align [options] [-r reference_atomlist] reference_geom [-t target_atomlist] target_geom
-
-Aligns [specified atoms in] target_geom to [specified atoms in] reference_geom.
+rmsd_align [options] reference_geom target_geom
 
 =head1 OPTIONS
 
