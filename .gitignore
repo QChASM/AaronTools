@@ -1,11 +1,12 @@
 template.job
 t/*/*/result.xyz
-t/job_setup/test.job
-t/substitute/result.xyz
 t/command_line_scripts/cat_screen/**/test_*.xyz
 t/command_line_scripts/cat_substitute/**/test_*.xyz
-t/command_line_scripts/substitute/*/test*.xyz
 t/command_line_scripts/dihedral/01/test_*.xyz
+t/command_line_scripts/follow/*/test_*.xyz
 t/command_line_scripts/genrotate/**/test_*.xyz
 t/command_line_scripts/grab_coords/*/testout.xyz
 t/command_line_scripts/grab_thermo/*/test.csv
+t/command_line_scripts/substitute/*/test*.xyz
+t/job_setup/test.job
+t/substitute/result.xyz
