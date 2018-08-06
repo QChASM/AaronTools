@@ -40,7 +40,7 @@ my $submit_fail = submit_job( com_file     => 'test.com',
 ok( !$submit_fail, "Testing job submission" );
 if ($submit_fail) {
     die "Failed to submit test job to the queue.\n"
-      . "Check $QCHASM/Aaron/t/job_setup/test.job for errors and revise "
+      . "Check $QCHASM/Aaron/test/job_setup/test.job for errors and revise "
       . "$QCHASM/AaronTools/template.job accordingly.\n";
 } else {
     diag(   "Submitting test job requesting $n_procs cores "
@@ -57,7 +57,7 @@ if ($job_found) {
 		# status is exit status of qdel, etc.
 		# should be 0 if success, non 0 otherwise
         ok( !$status, "Kill job $job_found..." );
-		($failed_to_kill) = findJob("$QCHASM/t/job_setup");
+		($failed_to_kill) = findJob("$QCHASM/test/job_setup");
 		# if job still found in the queue, FAIL
 		# else, if $status != 0, FAIL
 		# else, PASS
