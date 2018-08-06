@@ -5,8 +5,9 @@
 use strict;
 use warnings;
 
+use lib "$ENV{QCHASM}/AaronTools/test/command_line_scripts";
+
 use Test::More;
-use lib "$ENV{QCHASM}/AaronTools/t/command_line_scripts";
 require helper;
 
 my $cmd = 'rotate';

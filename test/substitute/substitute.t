@@ -8,6 +8,7 @@ use warnings;
 use Test::More;
 use Data::Dumper;
 
+use lib $ENV{PERL_LIB};
 use lib $ENV{QCHASM};
 use_ok('AaronTools::Geometry');
 use_ok('AaronTools::Catalysis');

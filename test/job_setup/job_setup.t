@@ -7,6 +7,7 @@ use warnings;
 
 use Test::More;
 
+use lib $ENV{PERL_LIB};
 my $QCHASM = $ENV{QCHASM};
 $QCHASM =~ s/(.*)\/?/$1/;
 eval {

@@ -9,6 +9,7 @@ use Test::More;
 
 use Data::Dumper;
 
+use lib $ENV{PERL_LIB};
 use lib $ENV{QCHASM};
 use AaronTools::Catalysis;
 
@@ -66,7 +67,7 @@ sub check_rmsd {
         $total_rmsd = $cata->RMSD( ref_geo => $ref );
 		$backbone_rmsd = $cata_backbone->RMSD( ref_geo => $ref_backbone );
 
-        ok( $total_rmsd < 0.5 && $backbone_rmsd < 10**(-5),
+        ok( $total_rmsd < 1.0 && $backbone_rmsd < 10**(-5),
             "RMSD validation" );
         diag("Total RMSD: $total_rmsd");
         diag("Backbone RMSD: $backbone_rmsd");

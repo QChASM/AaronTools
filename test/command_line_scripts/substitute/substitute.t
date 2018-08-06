@@ -5,8 +5,9 @@
 use strict;
 use warnings;
 
+use lib "$ENV{QCHASM}/AaronTools/test/command_line_scripts";
+
 use Test::More;
-use lib "$ENV{QCHASM}/AaronTools/t/command_line_scripts";
 require helper;
 
 my $cmd = 'substitute';
@@ -38,12 +39,12 @@ push @args,
     reorder => 1,
     message => 'multiple targets' };
 push @args,
-  { args    => '03/tBuOH.xyz -s 1,3=Cl 4=Et -m',
+  { args    => '03/tBuOH.xyz -s 1,3=Cl 4=Et',
     ref     => '03/ref.xyz',
     out     => '03/test.xyz',
-    rmsd    => 0.2,
-    reorder => 1,
-    message => 'multiple targets and substituents, with minimize' };
+    rmsd    => 0.5,
+	reorder => 1,
+    message => 'multiple targets and substituents' };
 
 foreach my $a (@args) {
     helper::trial( $cmd, $a );

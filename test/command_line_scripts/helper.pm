@@ -10,6 +10,7 @@ use Test::More;
 use Data::Dumper;
 
 use lib $ENV{QCHASM};
+use lib $ENV{PERL_LIB};
 use AaronTools::Geometry;
 
 sub trial {

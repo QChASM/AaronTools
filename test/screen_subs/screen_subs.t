@@ -9,6 +9,7 @@ use Test::More;
 use Data::Dumper;
 
 eval {
+	use lib $ENV{PERL_LIB};
     use lib $ENV{QCHASM};
     use AaronTools::Catalysis;
     1;
