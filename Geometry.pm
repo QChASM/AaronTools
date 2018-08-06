@@ -2148,7 +2148,7 @@ sub compare_lib {
 
     my @subs = keys %{ $subs };
     if ($#subs < 0) {
-        print {*STDERR} "Cannot determine the type of substituent, so no conformer information retrieved.\n";
+#        print {*STDERR} "Cannot determine the type of substituent, so no conformer information retrieved.\n";
     }elsif ($#subs == 0) {
        $self->{name} = $subs[0];
        $self->{conformer_num} = $subs->{$subs[0]}->{conformer_num};
