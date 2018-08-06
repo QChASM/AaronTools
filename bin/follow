@@ -36,6 +36,11 @@ sub main {
     my @freqs   = @{ $freq->{frequencies} };
     my @vectors = @{ $freq->{vectors} };
 
+	unless ( @freqs && @vectors ){
+		print {*STDERR} "Improper file format\n";
+		return 1;
+	}
+
     if ( $freqs[0] > 0 ) {
         print {*STDERR} "No imaginary frequencies to follow...\n";
         return 1;
