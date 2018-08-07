@@ -97,10 +97,10 @@ sub detect_component {
                 $self->{center_atom} = $TM;
                 $self->{substrate_atoms} = [0..$TM-1];
             }else {
-                print {*STDERR} "No transition metal was found in the geometry. ".
-                      "Catalysis object is determined to be purely organic. " .
-                      "If this is a Si, P or other non-metal atom centered ".
-                      "system, please specify that in the .xyz file.\n";
+#                print {*STDERR} "No transition metal was found in the geometry. ".
+#                      "Catalysis object is determined to be purely organic. " .
+#                      "If this is a Si, P or other non-metal atom centered ".
+#                      "system, please specify that in the .xyz file.\n";
                 $self->{substrate_atoms} = [0..$self->{ligand_atoms}->[0]-1];
             }
         }else {
