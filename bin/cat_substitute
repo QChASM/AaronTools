@@ -34,24 +34,15 @@ sub main {
     my $geom = _utils::get_cat( $file, \%numbered, $opt{relnum} );
     return 1 unless $geom;
 
-    # perform substitute for each substituent
-    #foreach my $component ( keys %numbered ) {
-    #    # determine requested target atom, in aaron's number scheme
-    #    my %params;
-    #    my %convert = _utils::get_sub_numbers( $geom, $component );
-    #    while ( my ( $target, $aaron_num ) = each %convert ) {
-    #        map { $params{$_} = $opt{$component}{$target}; } split /,/,
-    #          $aaron_num;
-
-    #    }
-    #    # do substitution
-    #    $geom->substitute( $component, %params );
-    #}
-
     $geom->substitute();
 
     foreach my $component ( keys %named ) {
         $geom->substitute( $component, %{ $named{$component} } );
+    }
+
+    if ( $opt{minimize} ) {
+        $geom->minimize_sub_torsions( object => $geom->{ligand} );
+        $geom->minimize_sub_torsions( object => $geom->{substrate} );
     }
 
     # Printing
@@ -97,6 +88,7 @@ GetOptions( 'help|h'            => \$opt{help},
             'relnum|r'          => \$opt{relnum},
             'substrate|s=s%{,}' => \%sublist,
             'ligand|l=s%{,}'    => \%liglist,
+            'minimize|m'        => \$opt{minimize},
             'force|f'           => \$opt{force},
             'output|o=s'        => \$opt{output} )
   or pod2usage(
@@ -140,6 +132,10 @@ Replace target (atom or substituent) on ligand with specified substituent
 =item B<-s target=sub>, B<--substrate target=sub>
 
 Replace target (atom or substituent) on substrate with specified substituent
+
+=item B<-m>, B<--minimize>
+
+Rotate new substitutions to minimize LJ-potential
 
 =item B<-r>, B<--relnum>
 

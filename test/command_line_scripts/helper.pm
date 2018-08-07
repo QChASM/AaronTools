@@ -18,7 +18,7 @@ sub trial {
     my $args = shift;
     my ( $err, $test, $ref, $success );
 
-	$cmd = "$ENV{QCHASM}/AaronTools/bin/$cmd";
+    $cmd = "$ENV{QCHASM}/AaronTools/bin/$cmd";
     if ( defined $args->{out} ) {
         system
           "$cmd $args->{args} -o $args->{out} -f 2>stderr.tmp 1>stdout.xyz";

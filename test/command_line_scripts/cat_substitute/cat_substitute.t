@@ -39,6 +39,12 @@ push @args,
     out     => '01/test_43-CF3_45-CF3_22-OH.xyz',
     ref     => '01/ref_43-CF3_45-CF3_22-OH.xyz',
     rmsd    => 0.2 };
+push @args,
+  { args    => '02/test.xyz -l 52=Me -s 20=OH',
+    message => 'Minimze new sub',
+    out     => '02/test_min.xyz',
+    ref     => '02/ref_min.xyz',
+    rmsd    => 0.3 };
 
 foreach my $a (@args) {
     helper::trial( $cmd, $a );
