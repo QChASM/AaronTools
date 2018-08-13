@@ -26,7 +26,9 @@ sub main {
     }
 
     # perform substitute for each substituent
-    foreach my $target ( keys %subs ) {
+	my @targets = keys %subs;
+	@targets = sort { $b <=> $a } @targets;
+    foreach my $target ( @targets ) {
         # target supplied as 1-indexed, Aaron uses 0-indexing
         $geom->substitute( 'target'           => $target - 1,
                            'sub'              => $subs{$target},

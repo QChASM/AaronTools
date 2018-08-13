@@ -45,6 +45,13 @@ push @args,
     rmsd    => 0.5,
 	reorder => 1,
     message => 'multiple targets and substituents' };
+push @args,
+  { args => '04/iPrPh-NC5C.xyz -s 49=Me 47=Me 21=Me 19=Me 67=Me 39=Me',
+    ref => '04/ref.xyz',
+	out => '03/test.xyz',
+	rmsd => 0.5,
+	reorder => 1,
+	message => 'Oddly ordered substituents' };
 
 foreach my $a (@args) {
     helper::trial( $cmd, $a );
