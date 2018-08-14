@@ -22,6 +22,9 @@ RR-Me-iPrPh-NC5C	(R,R)-(N,N')-bis(2,6-diisopropylphenyl)-dimethyl imidazolidinyl
 SS-Me-iPrPh-NC5C	(S,S)-(N,N')-bis(2,6-diisopropylphenyl)-dimethyl imidazolidinyl carbene	('7b' from DOI: 10.1021/ja202007s)
 RR-Me-TBF	(R,R)-Me-tbf	('2b' from DOI: 10.1021/om9003797)
 SS-Me-TBF	(S,S)-Me-tbf	('2b' from DOI: 10.1021/om9003797)
+JoshPhos	tBu-Joshphos	(from DOI: 10.1021/ol5027798)
+SL-J212-1	SL-J212-1	(from DOI:  10.1021/om500329q)
+SL-J212-2	SL-J212-2	(from DOI:  10.1021/om500329q)
 RR-norphos	(2R,3R)-(−)-2,3-Bis(diphenylphosphino)bicyclo[2.2.1]hept-5-ene ((-)-Norphos)
 SS-norphos	(2S,3S)-(−)-2,3-Bis(diphenylphosphino)bicyclo[2.2.1]hept-5-ene ((+)-Norphos)
 RR-QuinoxP	(R,R)-QuinoxP*	(from DOI: 10.1038/s41467-018-04693-9)
@@ -40,5 +43,5 @@ R-pFPh-StackPhos	(R)-p-FPh-StackPhos
 S-pFPh-StackPhos	(S)-p-FPh-StackPhos
 R-Me-StackPhos	(R)-Me-StackPhos
 S-Me-StackPhos	(S)-Me-StackPhos
-R-Ph-Mes-NC5C	(4R,5R)-(N,N&prime;)-bis(Mesityl) imidazolidinyl carbene (from DOI: 10.1021/jo800613h)
-S-Ph-Mes-NC5C	(4S,5S)-(N,N&prime;)-bis(Mesityl) imidazolidinyl carbene (from DOI: 10.1021/jo800613h)
+R-Ph-Mes-NC5C	(4R,5R)-(N,N&prime;)-bis(Mesityl) imidazolidinyl carbene	(from DOI: 10.1021/jo800613h)
+S-Ph-Mes-NC5C	(4S,5S)-(N,N&prime;)-bis(Mesityl) imidazolidinyl carbene	(from DOI: 10.1021/jo800613h)
