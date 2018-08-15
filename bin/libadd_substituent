@@ -22,8 +22,8 @@ sub main {
     my $HOME = $ENV{'HOME'};
 
     #Check to make sure $HOME/Aaron_libs/Subs exists. Make it if it doesn't.
-    if (! -f "$HOME/Aaron_libs/Subs") {
-        print "Making $HOME/Aaron_libs/Subs\n";
+    unless (-d "$HOME/Aaron_libs/Subs") {
+        print {*STDERR} "Making $HOME/Aaron_libs/Subs\n";
         system('mkdir -p $HOME/Aaron_libs/Subs');
     }
 

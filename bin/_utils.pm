@@ -118,6 +118,8 @@ Generates an outfile name for printXYZ() methods
 
 outfile = path/filebase_appends.xyz (sep defaults to _)
 
+path is created if necessary, filebase is stripped of path if necessary
+
 =cut
 
     # prints to STDOUT if $path == ''
@@ -134,6 +136,9 @@ outfile = path/filebase_appends.xyz (sep defaults to _)
         $outfile = $filebase;
         $outfile =~ s/(.*\/)?(.*)\..*?$/$2/;
         if ( $path ne '' ) {
+            unless ( -d $path ) {
+                system "mkdir -p $path";
+            }
             # if no directory specified, write to cwd
             # make sure we don't have double path seperators!
             if ( $path =~ /.*\/$/ ) {
@@ -171,17 +176,10 @@ Creates the directory structure necessary to save FILENAME
 
 =cut
 
-	my $path = shift;
-	if ( $path eq strip_dir($path) ){ return; }
-	$path =~ s/(.*\/)*(.*)/$1/;
-	my $dirs = '';
-	foreach my $dir ( split '/', $path ){
-		$dirs .= $dir . '/';
-		unless ( -d $dirs ){
-			print "Creating directory: $dirs\n";
-			mkdir $dirs;
-		}
-	}
+    my $path = shift;
+    if ( $path eq strip_dir($path) ) { return; }
+    $path =~ s/(.*\/)*(.*)/$1/;
+    system "mkdir -p $path";
 }
 
 sub handle_overwrite {

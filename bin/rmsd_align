@@ -84,7 +84,11 @@ sub split_atom_string {
     for my $as ( split /,/, $atomstring ) {
         if ( $as =~ /-/ ) {
             my @tmp = split /-/, $as;
-            push @res, ( $tmp[0] .. $tmp[1] );
+			if ( $tmp[0] < $tmp[1] ) {
+				push @res, ( $tmp[0] .. $tmp[1] );
+			} else {
+				push( @res, reverse ( $tmp[1] .. $tmp[0] ) );
+			}
         } else {
             push @res, $as;
         }
@@ -112,9 +116,7 @@ if ($targetatoms) {
 
 =head1 SYNOPSIS
 
-rmsd_align [options] [-r reference_atomlist] reference_geom [-t target_atomlist] target_geom
-
-Aligns [specified atoms in] target_geom to [specified atoms in] reference_geom.
+rmsd_align [options] reference_geom target_geom
 
 =head1 OPTIONS
 

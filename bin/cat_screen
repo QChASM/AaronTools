@@ -167,7 +167,10 @@ sub get_appends {
     my @appends;
     my %subs = %{ $geom->{$component}->{substituents} };
 
-    while ( my ( $k, $v ) = each %subs ) {
+	my @keys = keys %subs;
+	@keys = sort { $a <=> $b } @keys;
+    for my $k ( @keys ) {
+		my $v = $subs{$k};
         # $k = atom number, $v = substituent object
         if ($relnum) {
             push @appends,

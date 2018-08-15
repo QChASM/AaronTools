@@ -51,12 +51,12 @@ sub main {
     if ($debug) { print "Initial:\n"; $ligand->printXYZ(); }
 
     my $center = $geom->center();
-    $ligand->splice_atom( 0, 0, $center );
+    $ligand->splice_atom( 0, 0, $center ) if $center;
 
     # move metal to origin and remove TM
     $ligand->coord_shift( -1 * $ligand->get_point(0) );
     if ($debug) { print "Coord Shift:\n"; $ligand->printXYZ(); }
-    $ligand->splice_atom( 0, 1 );
+    $ligand->splice_atom( 0, 1 ) if $center;
 
     # orient key atoms along z-axis?
 

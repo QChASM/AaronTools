@@ -2,36 +2,98 @@
 
 use strict;
 use lib $ENV{'QCHASM'};
+use lib $ENV{'PERL_LIB'};
 
 use Getopt::Long;
 use Pod::Usage;
+use Math::Vector::Real;
+use AaronTools::G09Out;
+use Data::Dumper;
 
 unshift @INC, ("$ENV{'QCHASM'}/AaronTools/bin");
 require _utils;
 
 sub main {
-    my $reffile = shift;
-    my %opt     = @_;
+    my $file = shift;
+    my %opt  = @_;
 
-	# grab coords
-	# grab frequencies
-	# if animate, 10 steps each in + and - direction
-	# >>coord_shift for each step
-	# >>printXYZ each
-	# else, one step in specified direction
-	# >>coord_shift
-	# >>printXYZ
+    unless ( $opt{force} ) {
+        $opt{output} = _utils::handle_overwrite( $opt{output} );
+    }
+    _utils::mkdirsfor( $opt{output} ) if $opt{output};
+
+    # grab coords
+    my $geom = _utils::get_geom($file);
+    return 1 unless $geom;
+
+    # grab frequencies
+    open( LOGFILE, '<', $file )
+      or die "Cannot open $file for reading: $!";
+    my $freq = new AaronTools::Frequency( string    => join( '', <LOGFILE> ),
+                                          num_atoms => $#{ $geom->{coords} } + 1
+    );
+
+    my @freqs   = @{ $freq->{frequencies} };
+    my @vectors = @{ $freq->{vectors} };
+
+	unless ( @freqs && @vectors ){
+		print {*STDERR} "Improper file format\n";
+		return 1;
+	}
+
+    if ( $freqs[0] > 0 ) {
+        print {*STDERR} "No imaginary frequencies to follow...\n";
+        return 1;
+    }
+
+    if ( $opt{animate} ) {
+        # if animate, 10 steps each in + and - direction
+        for my $step ( -10 .. 10 ) {
+            $step *= 0.1;
+
+            # coord_shift for each step
+            my $geom_step = $geom->copy();
+            for my $atom ( 0 .. $#{ $geom->{coords} } ) {
+                my $v = $step * V( @{ $vectors[0][$atom] } );
+                $geom_step->coord_shift( $v, [$atom] );
+            }
+
+            # printXYZ, overwrite on first step, append after that
+            print("Saving step $step to $opt{output}\n") if $opt{output};
+            $geom_step->printXYZ(
+                               $opt{output},
+                               "Following imaginary frequency: scaled by $step",
+                               $step == -1 );
+        }
+    } else {
+        # else, one step in specified direction
+        my $step = 0.1;
+        if ( $opt{reverse} ) {
+            $step *= -1;
+        }
+
+        # coord_shift
+        for my $atom ( 0 .. $#{ $geom->{coords} } ) {
+            my $v = $step * V( @{ $vectors[0][$atom] } );
+            $geom->coord_shift( $v, [$atom] );
+        }
+        # printXYZ
+        print("Saving updated geometry to $opt{output}\n") if $opt{output};
+        $geom->printXYZ(
+            $opt{output},
+            "Following imaginary frequency: scaled by $step", 1 );
+    }
 }
 
 # read in options
 my %opt;
-$opt{help}  = '';
-$opt{write} = '-';
-GetOptions( 'help|h'    => \$opt{help},
-            'animate|a' => \$opt{animate},
-            'mode|m=i'  => \$opt{mode},
-            'reverse|r' => \$opt{reverse},
-            'write|w:s' => \$opt{write} )
+$opt{output} = '';
+GetOptions( 'help|h'     => \$opt{help},
+            'animate|a'  => \$opt{animate},
+            'mode|m=i'   => \$opt{mode},
+            'reverse|r'  => \$opt{reverse},
+            'output|o=s' => \$opt{output},
+            'force|f'    => \$opt{force} )
   or pod2usage(
     { -exitval => 1,
       -verbose => 1
@@ -56,13 +118,22 @@ follow [options] filename
 
 =over
 
-=item B<-w [directory]>, B<--write [directory]>
-
-Save files instead of printing to STDOUT. Defaults to current directory.
-
 =item B<-h>, B<--help>
 
 Print this help message and exit
+
+=item B<-a>, B<--animate>
+
+Follow 10 steps each in (+) and (-) direction
+
+=item B<-r>, B<--reverse>
+
+Follow in the (-) direction
+
+=item B<-o outfile.xyz [-f]>, B<--output outfile.xyz [--force]>
+
+Write new geometry output to xyz-file instead of STDOUT.
+Optionally, force overwrite if file exists.
 
 =back
 

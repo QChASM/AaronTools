@@ -26,7 +26,9 @@ sub main {
     }
 
     # perform substitute for each substituent
-    foreach my $target ( keys %subs ) {
+	my @targets = keys %subs;
+	@targets = sort { $b <=> $a } @targets;
+    foreach my $target ( @targets ) {
         # target supplied as 1-indexed, Aaron uses 0-indexing
         $geom->substitute( 'target'           => $target - 1,
                            'sub'              => $subs{$target},
@@ -119,9 +121,9 @@ Location of substituent (1-indexed) and requested substituent using key=value no
 
 Rotate new substituent to minimize LJ potential
 
-=item B<-o[f] outfile>, B<--output[-force] outfile>
+=item B<-o outfile [f]>, B<--output outfile [--force]>
 
-Only available if one geometry file is provided, otherwise use the B<--write> flag. Save the new geometry to <outfile>. Optionally, force overwrite if <outfile> already exists.
+Save the new geometry to <outfile>. Optionally, force overwrite if <outfile> already exists.
 
 =item B<-h>, B<--help>
 

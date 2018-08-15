@@ -39,11 +39,11 @@ sub main {
         if ( $opt{radians} ) {
             $outfile = _utils::get_outfile(
                 $file, $opt{write},
-                [ 'rotate', $opt{axis}, $angle ] );
+                [ 'rotate', $opt{axis}, $angle * $nrots ] );
         } else {
             $outfile = _utils::get_outfile(
                 $file, $opt{write},
-                [ 'rotate', $opt{axis}, rad2deg($angle) ] );
+                [ 'rotate', $opt{axis}, rad2deg( $angle * $nrots ) ] );
         }
 
         # set comment line to something useful
@@ -55,13 +55,13 @@ sub main {
         }
 
         # prints to STDOUT if $outfile == ''
-		_utils::mkdirsfor($outfile) if $outfile;
-		print("Saving to $outfile\n") if $outfile;
-        $geom->printXYZ( $outfile, $comment );
+        _utils::mkdirsfor($outfile)   if $outfile;
+        print("Saving to $outfile\n") if $outfile;
+        $geom->printXYZ( $outfile, $comment, 1);
         print("\n") if $outfile;
     }
 
-	return 0;
+    return 0;
 }
 
 # read in options
@@ -118,9 +118,9 @@ unless ( $opt{radians} ) {
 
 =head1 SYNOPSIS
 
-rotate [options] -x x|y|z -a angle [-n repeat] file [file2 file3 ...]
+rotate [options] -x x|y|z -a angle [-n repeat] file
 
-rotate [options] -x x|y|z -n rotations file [file2 file3 ...]
+rotate [options] -x x|y|z -n rotations file
 
 =head1 OPTIONS
 

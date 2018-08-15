@@ -57,8 +57,18 @@ sub grab_coords {
         }
       }
     } elsif ($filename =~ /(\S+)\.xyz/) {         #XYZ file
+	  my $num_structs = 0;
       while(<INFILE>) {
         chomp;	#allowing for multiple spaces at start of line in XYZ file
+		if ($_ =~ /^\d+$/){
+			if ($num_structs == 1){
+				warn "XYZ file with multiple structures detected, using last structure...\n";
+			}
+			@coords = ();
+			@atoms = ();
+			@flags = ();
+			$num_structs++;
+		}
         if($_ =~ /^\s*([a-zA-Z]+)\s+(-?\d+\.?\d*)\s+(-?\d+\.?\d*)\s+(-?\d+\.?\d*)/) {
           my $coord = [$2, $3, $4];
           push(@coords, $coord);

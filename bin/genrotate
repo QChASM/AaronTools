@@ -6,6 +6,7 @@ use lib $ENV{'PERL_LIB'};
 
 use Getopt::Long;
 use Pod::Usage;
+use Data::Dumper;
 use Math::Trig;
 use Math::Vector::Real;
 use AaronTools::Geometry;
@@ -15,60 +16,75 @@ require _utils;
 
 sub main {
     my $file  = shift;
-    my %opt    = @_;
-    my $angle  = $opt{angle};
-    my $vector = V( @{ $opt{vector} } );
+    my %opt   = @_;
+    my $angle = $opt{angle};
+    my $vector;
+    my $shift;
 
     # set angle if equally spaced rotations requested
     unless ( $opt{angle} ) {
         $angle = 2 * pi / $opt{nrots};
     }
 
-	my $geom = _utils::get_geom($file);
-	return 1 unless $geom;
+    my $geom = _utils::get_geom($file);
+    return 1 unless $geom;
 
-	# perform requested number of rotations
-	my $nrots = 0;
-	while ( $nrots < $opt{nrots} ) {
+    if ( @{ $opt{vector} } == 2 ) {
+        $shift = $geom->get_point( $opt{vector}->[0] - 1 );
+        $geom->coord_shift( -1 * $shift );
+        $vector =
+          $geom->get_bond( $opt{vector}->[0] - 1, $opt{vector}->[1] - 1 );
+    } else {
+        $shift  = 0;
+        $vector = V( @{ $opt{vector} } );
+    }
 
-		# rotates target atoms if specified, defaults to all atoms
-		if ( @{ $opt{targets} } ) {
-			$geom->genrotate( $vector, $angle, $opt{targets} );
-		} else {
-			$geom->genrotate( $vector, $angle );
-		}
+    # perform requested number of rotations
+    my $nrots = 0;
+    while ( $nrots < $opt{nrots} ) {
 
-		# increase rotation count before printing for angle calculation
-		$nrots += 1;
+        # rotates target atoms if specified, defaults to all atoms
+        if ( @{ $opt{targets} } ) {
+            $geom->genrotate( $vector, $angle, $opt{targets} );
+        } else {
+            $geom->genrotate( $vector, $angle );
+        }
 
-		# Printing
-		# $outfile will be empty string if write to file not requested
-		my $axis = join( '_', @{ $opt{vector} } );
-		my $outfile = _utils::get_outfile( $file, $opt{write},
-									[ 'genrotate', $axis, rad2deg($angle) ] );
-		if ( $opt{radians} ) {
-			my $outfile = _utils::get_outfile( $file, $opt{write},
-											[ 'genrotate', $axis, $angle ] );
-		}
+        # increase rotation count before printing for angle calculation
+        $nrots += 1;
 
-		# set comment line to something useful
-		my $comment;
-		if ($outfile) {
-			_utils::mkdirsfor($outfile);
-			print("Saving to $outfile\n") if $outfile;
-			$comment = _utils::strip_dir($outfile);
-		} else {
-			$comment = _utils::strip_dir($file);
-		}
-		if ( $opt{radians} ) {
-			$comment .= "  Rotated " . $angle * $nrots / pi . "*pi";
-		} else {
-			$comment .= "  Rotated " . rad2deg( $angle * $nrots );
-		}
+        # Printing
+        # $outfile will be empty string if write to file not requested
+        my $axis = join( '_', @{ $opt{vector} } );
+        my $outfile = _utils::get_outfile(
+            $file, $opt{write},
+            [ 'genrotate', $axis, rad2deg( $angle * $nrots ) ] );
+        if ( $opt{radians} ) {
+            my $outfile = _utils::get_outfile(
+                $file, $opt{write},
+                [ 'genrotate', $axis, $angle * $nrots ] );
+        }
 
-		# printXYZ('') prints to STDOUT
-		$geom->printXYZ( $outfile, $comment, 1 );
-		print("\n") unless $outfile;
+        # set comment line to something useful
+        my $comment;
+        if ($outfile) {
+            _utils::mkdirsfor($outfile);
+            print("Saving to $outfile\n") if $outfile;
+            $comment = _utils::strip_dir($outfile);
+        } else {
+            $comment = _utils::strip_dir($file);
+        }
+        if ( $opt{radians} ) {
+            $comment .= "  Rotated " . $angle * $nrots / pi . "*pi along " . join ",", @$vector;
+        } else {
+            $comment .= "  Rotated " . rad2deg( $angle * $nrots ) . " along " . join ",", @$vector;
+        }
+
+        # printXYZ('') prints to STDOUT
+        $geom->coord_shift($shift) if $shift;
+        $geom->printXYZ( $outfile, $comment, 1 );
+        print("\n") unless $outfile;
+        $geom->coord_shift( -1 * $shift ) if $shift;
     }
     return 0;
 }
@@ -77,24 +93,20 @@ sub main {
 my %opt;
 my @vector;
 my @targets;
-$opt{help}    = '';
-$opt{vector}  = \@vector;
-$opt{angle}   = 0;
-$opt{nrots}   = 1;
-$opt{targets} = \@targets;
-$opt{radians} = '';
-$opt{write}   = '-';         # '-' indicates no write, '' indicates write to cwd
-GetOptions( 'help|h'         => \$opt{help},
-            'vector|v=f{3}'  => \@vector,
-            'angle|a:f'      => \$opt{angle},
-            'nrots|n:i'      => \$opt{nrots},
-            'targets|t:i{,}' => \@targets,
-            'radians|r'      => \$opt{radians},
-            'write|w:s'      => \$opt{write} )
+$opt{vector} = \@vector;
+$opt{nrots}  = 1;
+$opt{write}  = '-';        # '-' indicates no write, '' indicates write to cwd
+GetOptions( 'help|h'          => \$opt{help},
+            'vector|v=f{2,3}' => \@vector,
+            'angle|a:f'       => \$opt{angle},
+            'nrots|n:i'       => \$opt{nrots},
+            'targets|t:s'     => \$opt{targets},
+            'radians|r'       => \$opt{radians},
+            'write|w:s'       => \$opt{write} )
   or pod2usage(
-                { -exitval => 1,
-                  -verbose => 1
-                } );
+    { -exitval => 1,
+      -verbose => 1
+    } );
 pod2usage(0) if $opt{help};
 
 # requires axis vector, angle or number of rotations, and at least one file
@@ -106,41 +118,54 @@ pod2usage(
     } )
   unless (     @ARGV > 0
            and @{ $opt{vector} }
-           and ( $opt{angle} or $opt{nrots} > 1 ) );
+           and ( defined $opt{angle} or $opt{nrots} > 1 ) );
 
 pod2usage(
-           { -message => "Number of rotations must be a positive integer.\n",
-             -exitval => 1,
-             -verbose => 1
-           } ) if ( $opt{nrots} < 0 );
+    { -message => "Number of rotations must be a positive integer.\n",
+      -exitval => 1,
+      -verbose => 1
+    } ) if ( $opt{nrots} < 0 );
 
 # targets supplied as 1-indexed, Aaron uses 0-indexing
+if ( defined $opt{targets} ) {
+    my @targets;
+    for my $t ( split /,/, $opt{targets} ) {
+        my @trange = split /-/, $t;
+        if ( @trange == 2 ) {
+            push @targets, ( $trange[0] .. $trange[1] );
+        } else {
+            push @targets, $trange[0];
+        }
+    }
+    $opt{targets} = \@targets;
+}
 foreach my $t ( @{ $opt{targets} } ) {
     $t -= 1;
 }
 
 # angle should be in radians
-unless ( $opt{radians} ) {
-    $opt{angle} = deg2rad( $opt{angle} );
+if ( defined $opt{angle} ) {
+    $opt{angle} = deg2rad( $opt{angle} ) unless ( $opt{radians} );
 }
 
-&main( \@ARGV, %opt );
+&main( $ARGV[0], %opt );
 
 =pod
 
 =head1 SYNOPSIS
 
-genrotate [options] -v x y z -a angle [-n repeat] file [file2 file3 ...]
+genrotate [options] -v (x y z | a1 a2) -a angle [-n repeat] file
 
-genrotate [options] -v x y z -n rotations file [file2 file3 ...]
+genrotate [options] -v (x y z | a1 a2) -n rotations file
 
 =head1 OPTIONS
 
 =over
 
-=item B<-v x y z>, B<--vector x y z>
+=item B<-v (x y z | a1 a2)>, B<--vector (x y z | a1 a2)>
 
-The rotation vector defined by the points (0, 0, 0), (x, y, z).
+The rotation vector defined by the points (0, 0, 0), (x, y, z),
+or defined by the vector from a1 to a2 (1-indexed atoms).
 Should be space separated.
 
 =item B<-a angle>, B<--angle angle>
