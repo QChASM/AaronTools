@@ -131,7 +131,7 @@ sub submit_job {
 
 
         if ($job_found) {
-            print "Submitting $jobfile\n";
+            print "  Submitting $jobfile\n";
             open JOB, ">$jobfile" or die "cannot open $jobfile\n";
             print JOB $job_content;
             close (JOB);
