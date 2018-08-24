@@ -63,7 +63,23 @@ sub findJob {
             }
         }
     }elsif ($queue_type =~ /SGE/i) {
-      die "SGE not supported yet!";
+        my $qstat1 = `qstat -s pr -u $ENV{USER}`; #get qstat output for this user's jobs that are running/pending
+
+        my @jobs = ($qstat1 =~ m/^\s*?(\w+)/gm); #get the first column of qstat data, which contains job IDs
+        shift(@jobs); #the first line's first column is the header 'job-ID', so remove that 
+        my $jlist = join(',', @jobs); #join these on commas so we can ask qstat for more info about them
+        my $qstat2 = `qstat -j $jlist`; #call qstat again, but this time get more info
+
+        foreach my $job (@jobs) {
+            if ( $qstat2 =~ m/job_number:\s+?($job)[\D\d]+?sge_o_workdir:\s+(.*)/gm ) { #look for a job_number followed by a sge_o_workdir
+                if ($2 =~ /$Path/) { #if the string after sge_o_workdir is the same as PWD, this job is running in this directory
+                #this is split up into two if statements instead of looking for a job_number followed by sge_o_workdir:\s+$pwd because of reasons
+                #the main reason is that it would find a job ID, and then look all the way ahead to find sge_o_workdir:\s+$pwd even if there's another job_number in between
+                #I tried using (?!job_number), but that didn't stop it from looking too far ahead
+                    push(@jobIDs, $job);
+                }
+            }
+		}
     }
 
 
@@ -85,7 +101,7 @@ sub killJob {
     }elsif ($queue_type =~ /Slurm/i) {
         $rv = system("scancel $job");
     }elsif ($queue_type =~ /SGE/i) {
-      die "SGE not supported yet!";
+        $rv = system("qdel $job >&/dev/null");
    }
    sleep(3);
    return $rv;
@@ -169,9 +185,11 @@ sub submit_job {
 		print {*STDERR} "Submission denied for $jobname.job!\n";
                 $failed = 1;
             }
-        }
         } elsif($queue_type =~ /SGE/i) {
-            die "SGE not yet supported!";
+            if(system("qsub $jobname.job >& /dev/null")) {
+		print {*STDERR} "Submission denied for $jobname.job!\n";
+                $failed = 1;
+        	}
         }
         chdir($current);
     }
