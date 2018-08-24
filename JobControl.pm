@@ -17,7 +17,7 @@ my $queue_type = $ENV{'QUEUE_TYPE'};
 
 #Returns jobIDs of all jobs (queued or running) in current directory, returns 0 if no jobs in queue match current directory
 #This could be improved by searching for $Path more carefully!
-#Works for PBS (default) or LSF
+#Works for PBS, LSF, Slurm and soon SGE
 sub findJob {
     my $Path = $_[0];
     chomp($Path);
@@ -62,7 +62,10 @@ sub findJob {
                 push(@jobIDs,$array[0]);
             }
         }
+    }elsif ($queue_type =~ /SGE/i) {
+      die "SGE not supported yet!";
     }
+
 
     if(@jobIDs) {
     	return @jobIDs;
@@ -81,13 +84,15 @@ sub killJob {
         $rv = system("qdel $job");
     }elsif ($queue_type =~ /Slurm/i) {
         $rv = system("scancel $job");
+    }elsif ($queue_type =~ /SGE/i) {
+      die "SGE not supported yet!";
    }
    sleep(3);
    return $rv;
 }
 
 
-#Works for LSF or PBS (default)
+#Works for LSF, PBS, Slurm, and soon SGE
 sub submit_job {
     my %params = @_;
 
@@ -164,6 +169,9 @@ sub submit_job {
 		print {*STDERR} "Submission denied for $jobname.job!\n";
                 $failed = 1;
             }
+        }
+        } elsif($queue_type =~ /SGE/i) {
+            die "SGE not yet supported!";
         }
         chdir($current);
     }
