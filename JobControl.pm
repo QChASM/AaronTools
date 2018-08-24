@@ -71,12 +71,13 @@ sub findJob {
         my $qstat2 = `qstat -j $jlist`; #call qstat again, but this time get more info
 
         foreach my $job (@jobs) {
-            if ( $qstat2 =~ m/job_number:\s+?($job)[\D\d]+?sge_o_workdir:\s+(.*)/gm ) { #look for a job_number followed by a sge_o_workdir
-                if ($2 =~ /$Path/) { #if the string after sge_o_workdir is the same as PWD, this job is running in this directory
+            if ( $qstat2 =~ m/job_number:\s+?(\d+)[\D\d]+?sge_o_workdir:\s+(.*)/gm ) { #look for a job_number followed by a sge_o_workdir
+                my $j = $1;
+				if ($2 =~ /$Path/) { #if the string after sge_o_workdir is the same as PWD, this job is running in this directory
                 #this is split up into two if statements instead of looking for a job_number followed by sge_o_workdir:\s+$pwd because of reasons
                 #the main reason is that it would find a job ID, and then look all the way ahead to find sge_o_workdir:\s+$pwd even if there's another job_number in between
                 #I tried using (?!job_number), but that didn't stop it from looking too far ahead
-                    push(@jobIDs, $job);
+                    push(@jobIDs, $j);
                 }
             }
 		}
