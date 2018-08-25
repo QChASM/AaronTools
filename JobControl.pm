@@ -64,23 +64,24 @@ sub findJob {
         }
     }elsif ($queue_type =~ /SGE/i) {
         my $qstat1 = `qstat -s pr -u $ENV{USER}`; #get qstat output for this user's jobs that are running/pending
-
         my @jobs = ($qstat1 =~ m/^\s*?(\w+)/gm); #get the first column of qstat data, which contains job IDs
-        shift(@jobs); #the first line's first column is the header 'job-ID', so remove that 
+        shift(@jobs); #the first line's first column is the header 'job-ID', so remove that
         my $jlist = join(',', @jobs); #join these on commas so we can ask qstat for more info about them
-        my $qstat2 = `qstat -j $jlist`; #call qstat again, but this time get more info
 
-        foreach my $job (@jobs) {
-            if ( $qstat2 =~ m/job_number:\s+?(\d+)[\D\d]+?sge_o_workdir:\s+(.*)/gm ) { #look for a job_number followed by a sge_o_workdir
-                my $j = $1;
-				if ($2 =~ /$Path$/) { #if the string after sge_o_workdir is the same as PWD, this job is running in this directory
-                #this is split up into two if statements instead of looking for a job_number followed by sge_o_workdir:\s+$pwd because of reasons
-                #the main reason is that it would find a job ID, and then look all the way ahead to find sge_o_workdir:\s+$pwd even if there's another job_number in between
-                #I tried using (?!job_number), but that didn't stop it from looking too far ahead
-                    push(@jobIDs, $j);
-                }
+        my $qstat2 = `qstat -j $jlist`; #call qstat again, but this time get more info
+        my @lines = split(/\n/, $qstat2); #split each line into an array
+        my $job;
+
+        foreach my $i (0..$#lines) {
+            #it looks like job_number is always before the corresponding sge_o_workdir
+            if( $lines[$i] =~ m/job_number:\s+(\d+)/ ) {
+                $job = $1;
             }
-		}
+            if( $lines[$i] =~ m/sge_o_workdir:\s+[\S]+$Path$/ ) { 
+            #this will return all your jobs if you run it in your home directory because $Path is ''
+                push(@jobIDs, $job);
+            }
+        }
     }
 
 
