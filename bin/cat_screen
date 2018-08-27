@@ -71,36 +71,35 @@ sub main {
         print "\n";
     }
     # perform screen on each of the newly generated geometries
-    my @sub_geoms;
     foreach my $geom (@sub_ligs) {
+		my @sub_geoms;
         push @sub_geoms, $geom->screen_subs( 'substrate', %params );
+		#
+		# Printing
+		#
+		# prints to STDOUT if $outfile == ''
+		while (@sub_geoms > 0) {
+			my $sg = pop @sub_geoms;
+			my @appends;    # for filename generation
+
+			# add ligand info to @appends
+			push @appends, get_appends( $sg, 'ligand', $opt{relnum} );
+			# add substrate info to @appends
+			push @appends, get_appends( $sg, 'substrate', $opt{relnum} );
+
+			# generate filename (with appropriate directory)
+			my $outfile = _utils::get_outfile(_utils::strip_dir($file), $opt{write},
+											\@appends );
+
+			# create necessary directories if they doesn't exist
+			_utils::mkdirsfor($outfile) if $outfile;
+
+			# save or print to stdout
+			print("Saving substituted coords to $outfile\n") if $outfile;
+			print("\n") unless $outfile;
+			$sg->printXYZ($outfile, '', 1);
+		}
     }
-
-    #
-    # Printing
-    #
-    # prints to STDOUT if $outfile == ''
-    for my $geom (@sub_geoms) {
-        my @appends;    # for filename generation
-
-        # add ligand info to @appends
-        push @appends, get_appends( $geom, 'ligand', $opt{relnum} );
-        # add substrate info to @appends
-        push @appends, get_appends( $geom, 'substrate', $opt{relnum} );
-
-        # generate filename (with appropriate directory)
-        my $outfile = _utils::get_outfile(_utils::strip_dir($file), $opt{write},
-                                          \@appends );
-
-        # create necessary directories if they doesn't exist
-        _utils::mkdirsfor($outfile) if $outfile;
-
-        # save or print to stdout
-        print("Saving substituted coords to $outfile\n") if $outfile;
-        print("\n") unless $outfile;
-        $geom->printXYZ($outfile);
-    }
-
     return 0;
 }
 
