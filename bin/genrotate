@@ -50,9 +50,9 @@ sub main {
     # set angle if equally spaced rotations requested
     unless ( $opt{angle} ) {
         $angle = 2 * pi / $opt{nrots};
-    } else {
-        $angle = deg2rad( $opt{angle} );
-    }
+    }else{
+		$angle = $opt{angle};
+	}
 
     # perform requested number of rotations
     my $nrots = 0;
@@ -89,14 +89,17 @@ sub printing {
 
     # $outfile will be empty string if write to file not requested
     my $axis = join( '_', @{ $opt{vector} } );
-    my $outfile = _utils::get_outfile(
-        $file, $opt{write},
-        [ 'genrotate', $axis, rad2deg( $angle * $nrots ) ] );
+    my $outfile;
     if ( $opt{radians} ) {
-        my $outfile = _utils::get_outfile(
+        $outfile = _utils::get_outfile(
             $file, $opt{write},
             [ 'genrotate', $axis, $angle * $nrots ] );
-    }
+    }else{
+		$outfile = _utils::get_outfile(
+			$file, $opt{write},
+			[ 'genrotate', $axis, rad2deg( $angle * $nrots ) ] );
+
+	}
 
     # set comment line to something useful
     my $comment;
