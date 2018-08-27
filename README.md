@@ -3,4 +3,6 @@ AaronTools provides a collection of tools for automating routine tasks encounter
 
 These tools can be used either directly within a Perl script using AaronTools objects, or via a series of command-line scripts. 
 
-Documentation is <a href="https://github.com/QChASM/AaronTools/wiki">available here.</a>
+Documentation on installing and using AaronTools is <a href="https://github.com/QChASM/AaronTools/wiki">available here.</a>
+
+If you have any questions, feel free to contact us at catalysttrends@uga.edu
