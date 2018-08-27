@@ -86,7 +86,9 @@ sub grab_coords {
             $constraints = [@constraints];
         }
         if ($_ =~ /\s+L:(\S+)/ || ($_ =~ /^L:(\S+)/)) {                    #Ligand atoms (L:14-26)
-            my @temp = map { $_ - 1 } split(/-/, $1);
+            my $temp = $1;
+            $temp =~ s/;$//g;	#strip off trailing semicolon
+            my @temp = map { $_ - 1 } split(/-/, $temp);
             $ligand = [$temp[0]..$temp[1]];
         }
         if ($_ =~ /\s+C:(\S+)/ || ($_ =~ /^C:(\S+)/)) {			   #Reaction Center (C:13)

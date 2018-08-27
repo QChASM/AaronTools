@@ -1,5 +1,4 @@
 #!/usr/bin/perl -w
-
 #This is a test script go through all cases provided in the test directory.
 
 use strict; use warnings;
@@ -55,7 +54,7 @@ for my $case (@cases) {
         next;
     }
 
-    if (system('./test.pl')) {
+    if (system('perl ./test.pl')) {
         print "Case $case didn't pass the test, find error message above.\n";
         push (@fail, $case);
         print '-' x 88 . "\n";

@@ -17,7 +17,7 @@ my $queue_type = $ENV{'QUEUE_TYPE'};
 
 #Returns jobIDs of all jobs (queued or running) in current directory, returns 0 if no jobs in queue match current directory
 #This could be improved by searching for $Path more carefully!
-#Works for PBS (default) or LSF
+#Works for PBS, LSF, Slurm and soon SGE
 sub findJob {
     my $Path = $_[0];
     chomp($Path);
@@ -62,7 +62,28 @@ sub findJob {
                 push(@jobIDs,$array[0]);
             }
         }
+    }elsif ($queue_type =~ /SGE/i) {
+        my $qstat1 = `qstat -s pr -u $ENV{USER}`; #get qstat output for this user's jobs that are running/pending
+        my @jobs = ($qstat1 =~ m/^\s*?(\w+)/gm); #get the first column of qstat data, which contains job IDs
+        shift(@jobs); #the first line's first column is the header 'job-ID', so remove that
+        my $jlist = join(',', @jobs); #join these on commas so we can ask qstat for more info about them
+
+        my $qstat2 = `qstat -j $jlist`; #call qstat again, but this time get more info
+        my @lines = split(/\n/, $qstat2); #split each line into an array
+        my $job;
+
+        foreach my $i (0..$#lines) {
+            #it looks like job_number is always before the corresponding sge_o_workdir
+            if( $lines[$i] =~ m/job_number:\s+(\d+)/ ) {
+                $job = $1;
+            }
+            if( $lines[$i] =~ m/sge_o_workdir:\s+[\S]+$Path$/ ) { 
+            #this will return all your jobs if you run it in your home directory because $Path is ''
+                push(@jobIDs, $job);
+            }
+        }
     }
+
 
     if(@jobIDs) {
     	return @jobIDs;
@@ -81,13 +102,15 @@ sub killJob {
         $rv = system("qdel $job");
     }elsif ($queue_type =~ /Slurm/i) {
         $rv = system("scancel $job");
+    }elsif ($queue_type =~ /SGE/i) {
+        $rv = system("qdel $job >&/dev/null");
    }
    sleep(3);
    return $rv;
 }
 
 
-#Works for LSF or PBS (default)
+#Works for LSF, PBS, Slurm, and soon SGE
 sub submit_job {
     my %params = @_;
 
@@ -131,7 +154,7 @@ sub submit_job {
 
 
         if ($job_found) {
-            print "Submitting $jobfile\n";
+            print "  Submitting $jobfile\n";
             open JOB, ">$jobfile" or die "cannot open $jobfile\n";
             print JOB $job_content;
             close (JOB);
@@ -164,6 +187,11 @@ sub submit_job {
 		print {*STDERR} "Submission denied for $jobname.job!\n";
                 $failed = 1;
             }
+        } elsif($queue_type =~ /SGE/i) {
+            if(system("qsub $jobname.job >& /dev/null")) {
+		print {*STDERR} "Submission denied for $jobname.job!\n";
+                $failed = 1;
+        	}
         }
         chdir($current);
     }

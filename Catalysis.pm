@@ -52,7 +52,6 @@ sub new {
 					die "Cannot assign substituents to key atoms";
 				}
 			}
-
             $self->ligand()->set_substituents($substituents->{ligand});
             $self->ligand()->detect_backbone_subs( no_new_subs => $params{no_new_subs} );
             #substrate subs
@@ -1498,18 +1497,18 @@ sub _detect_substituent {
     my $self = shift;
     my %params = @_;
 
-    my ($start, $end) = ($params{target}, $params{end});
+    my ($start, $end, $no_new_sub) = ($params{target}, $params{end}, $params{no_new_sub});
 
     my $is_sub = $self->__detect_substituent($start, $end);
 
-    if ($is_sub) {
+    if ($is_sub && (! $no_new_sub)) {
         my $to_sub = $self->{substituents}->{$start}->{sub};
         $self->{substituents}->{$start} = $self->detect_substituent( target => $start,
                                                                         end => $end );
         $self->{substituents}->{$start}->{sub} = $to_sub;
     }
 
-    return $is_sub;
+    return $is_sub && (! $no_new_sub);
 }
 
 
@@ -1782,15 +1781,19 @@ sub detect_backbone_subs {
                         #backbone, if not make a new backbone
                         my $is_sub = 1;
                         if ($no_new_subs) {
-                            unless (grep { $_ == $atom_connected}
-                                        keys %{ $self->{substituents} }) {
-                                $is_sub = 0;
+                            if (grep { $_ == $atom_connected}
+                                    keys %{ $self->{substituents} }) {
+                                my $new_back_atoms = $self->_get_all_connected( $atom_connected,
+                                                                                $atom );
+                                for my $atom_temp (@$new_back_atoms) {
+                                    $backbone{$atom_temp} = 1;
+                                }
                             }
                         }
 
-                        unless ($is_sub &&
-                                $self->_detect_substituent(target => $atom_connected,
-                                                           end => $atom)) {
+                        unless($self->_detect_substituent(target => $atom_connected,
+                                                             end => $atom,
+                                                      no_new_sub => $no_new_subs)) {
                             my $new_back_atoms = $self->_get_all_connected( $atom_connected,
                                                                             $atom );
                             for my $atom_temp (@$new_back_atoms) {
