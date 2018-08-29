@@ -1,0 +1,184 @@
+#!/usr/bin/perl -w
+
+use strict;
+use lib $ENV{'QCHASM'};
+use lib $ENV{PERL_LIB};
+
+use Getopt::Long;
+use Pod::Usage;
+use Math::Trig;
+use Math::Vector::Real;
+use AaronTools::Geometry;
+
+unshift @INC, ("$ENV{'QCHASM'}/AaronTools/bin");
+require _utils;
+
+sub main {
+    my $file = shift;
+    my %opt  = @_;
+
+    my $geom = _utils::get_geom($file);
+    return 1 unless ($geom);
+
+    if ( @{ $opt{print} } ) {
+        &print_bond( $geom, @{ $opt{print} } );
+    }
+    if ( @{ $opt{set} } ) {
+        &set_or_change_bond( $geom, $opt{fix}, 0, @{ $opt{set} } );
+    }
+    if ( @{ $opt{change} } ) {
+        &set_or_change_bond( $geom, $opt{fix}, 1, @{ $opt{change} } );
+    }
+
+    #prints to STDOUT  if $opt{output} == '' or saves to file
+    if ( @{ $opt{set} } or @{ $opt{change} } ) {
+        $opt{output} = _utils::handle_overwrite( $opt{output} )
+          unless $opt{force};
+        _utils::mkdirsfor( $opt{output} ) if $opt{output};
+        print("Saving updated geometry to $opt{output}\n") if $opt{output};
+        $geom->printXYZ( $opt{output}, '', 1 );
+    }
+
+    return 0;
+}
+
+sub set_or_change_bond {
+    my $geom = shift;
+    my $fix = shift;
+	my $adjust = shift;
+    my @args = @_;
+
+    while ( @args > 0 ) {
+        my @atoms = splice( @args, 0, 2 );
+        for my $atom (@atoms) {
+            #AaronTools uses 0-indexing for atoms
+            $atom -= 1;
+        }
+        my $dist = shift(@args);
+		if ($adjust){
+			$adjust = $dist;
+			$dist = 0;
+		}
+
+		if ( $fix == 0 ){
+			$fix = 1;
+		} elsif ( $fix == 2 ){
+			$fix = 0;
+			my $tmp = $atoms[0];
+			$atoms[0] = $atoms[1];
+			$atoms[1] = $tmp;
+		} else {
+			$fix = 0;
+		}
+
+		$geom->change_distance( atom1=>$atoms[0], atom2=>$atoms[1], distance=>$dist, by_distance=>$adjust, fix_atom1=>$fix, translate_group=>1 );
+    }
+    return;
+}
+
+sub print_bond {
+    my $geom     = shift;
+    my @atomlist = @_;
+
+    while ( @atomlist > 0 ) {
+        my $bond;
+        my @atoms = splice( @atomlist, 0, 2 );
+        for my $atom (@atoms) {
+            #AaronTools uses 0-indexing for atoms
+            $atom -= 1;
+        }
+
+		eval {
+			local $@;
+			$bond = $geom->get_bond(@atoms);
+			1;
+		} or do {
+            die "cannot determine bond from atoms provided: $@";
+		};
+
+        for my $atom (@atoms) {
+            #switch back to 1-indexing for printing
+            $atom += 1;
+        }
+        printf( "Bond between atoms %d %d: %f\n", @atoms, abs($bond) );
+    }
+    return;
+}
+
+my %opt;
+$opt{help}   = '';
+$opt{output} = '';
+$opt{fix} = 0;
+GetOptions( 'help|h'        => \$opt{help},
+            'change|c=f{3}' => \@{ $opt{change} },
+            'print|p=i{2}'  => \@{ $opt{print} },
+            'set|s=f{3}'    => \@{ $opt{set} },
+			'fix|x=i'       => \$opt{fix},
+            'force|f'       => \$opt{force},
+            'output|o=s'    => \$opt{output} )
+  or pod2usage(
+    { -exitval => 1,
+      -verbose => 1
+    } );
+pod2usage(0) if $opt{help};
+pod2usage(
+    { -message => "Please specify a filename\n",
+      -exitval => 1,
+      -verbose => 1
+    } ) if @ARGV < 1;
+pod2usage(
+    {  -message =>
+         "Please specify at least one of the following: --change, --print, --set\n",
+       -exitval => 1,
+       -verbose => 1
+    } ) unless ( @{ $opt{change} } or @{ $opt{print} } or @{ $opt{set} } );
+pod2usage(
+    { -message => "--fix value error: should be 0, 1, or 2\n",
+      -exitval => 1,
+      -verbose => 1
+    } ) if $opt{fix} !~ /[012]/;
+
+&main( $ARGV[0], %opt );
+
+=pod
+
+=head1 SYNOPSIS
+
+bond [options] filename
+
+=head1 OPTIONS
+
+=over
+
+=item B<-c ATOM1 ATOM2 DIST>, B<--change ATOM1 ATOM2 DIST>
+
+Adjust bond length between ATOM1-ATOM2 (1-indexed) by DIST.
+
+=item B<-p ATOM1 ATOM2 ATOM3 ATOM4>, B<--print ATOM1 ATOM2 ATOM3 ATOM4>
+
+Print current ATOM1-ATOM2 (1-indexed) bond length
+
+=item B<-s ATOM1 ATOM2 ATOM3 ATOM4 ANGLE>, B<--set ATOM1 ATOM2 ATOM3 ATOM4 ANGLE>
+
+Set new ATOM1-ATOM2 (1-indexed) bond length to DIST
+
+=item B<-x VALUE>, B<--fix VALUE>
+
+Acceptable VALUEs are 0, 1, or 2.
+A VALUE of 1 fixes ATOM1 in space, thus only moving the fragment starting at ATOM2.
+A VALUE of 2 fixes ATOM2.
+A VALUE of 0 moves both fragments on either side of the bond.
+
+=item B<-o outfile.xyz [-f]>, B<--output outfile.xyz [--force]>
+
+Write new geometry output to xyz-file instead of STDOUT.
+Optionally, force overwrite if file exists.
+
+=item B<-h>, B<--help>
+
+Print this help message and exit
+
+=back
+
+=cut
+

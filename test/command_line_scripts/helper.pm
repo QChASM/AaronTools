@@ -59,15 +59,21 @@ sub trial {
 sub test_file_contents {
     my $test    = shift;
     my $ref     = shift;
-    my $success = 1;
+    my $success = 0;
+
+	unless ( -f $test && -f $ref ){
+		diag "File $ref does not exist" unless (-f $ref);
+		diag "File $test does not exist" unless (-f $test);
+		return 0;
+	}
 
     open TEST, '<', $test;
     open REF,  '<', $ref;
-    while ( defined( my $t = <TEST> ) && defined( my $r = <REF> ) ) {
-        $success = $success && ( $t eq $r );
-        last unless $success;
+	my $first = 1;
+	while ( ( my $t = <TEST> )  && ( my $r = <REF> ) ) {
+        $success = ($success || $first) && ( $t eq $r );
+		$first = 0;
     }
-
     return $success;
 }
 
