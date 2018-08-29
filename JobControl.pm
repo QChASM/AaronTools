@@ -19,76 +19,91 @@ my $queue_type = $ENV{'QUEUE_TYPE'};
 #This could be improved by searching for $Path more carefully!
 #Works for PBS, LSF, Slurm and soon SGE
 sub findJob {
-    my $Path = $_[0];
-    chomp($Path);
+	my $Path = $_[0];
+	chomp($Path);
 
-    #Strip leading directories off of $Path, to deal with different ways $HOME is treated
-    $Path =~ s/^\S+$ENV{USER}//;
+	#Strip leading directories off of $Path, to deal with different ways $HOME is treated
+	$Path =~ s/^\S+$ENV{USER}//;
 
-    my @jobIDs;
+	my @jobIDs;
 
-    if($queue_type =~ /LSF/i) {				#LSF queue
-        my $bjobs=`bjobs -l 2> /dev/null`;
-        #Combine into one line with no whitespace
-        $bjobs =~ s/\s+//g;
-        $bjobs =~ s/\r|\n//g;
+	if($queue_type =~ /LSF/i) {				#LSF queue
+		my $bjobs=`bjobs -l 2> /dev/null`;
+		#Combine into one line with no whitespace
+		$bjobs =~ s/\s+//g;
+		$bjobs =~ s/\r|\n//g;
 
-        #First grab all jobs
-        my @jobs = ($bjobs =~ m/(Job<\d+>.*RUNLIMIT)/g);
+		#First grab all jobs
+		my @jobs = ($bjobs =~ m/(Job<\d+>.*RUNLIMIT)/g);
 
-        #parse each job looking for $Path
-        foreach my $job (@jobs) {
-            if ($job =~ /Job<(\d+)>\S+CWD<.+$Path>/) {
-                push(@jobIDs,$1);
-            }
-        }
-    }elsif ($queue_type =~ /PBS/i) {				#PBS
-        my $qstat = `qstat -fx`;
+		#parse each job looking for $Path
+		foreach my $job (@jobs) {
+			if ($job =~ /Job<(\d+)>\S+CWD<.+$Path>/) {
+				push(@jobIDs,$1);
+			}
+		}
+	}elsif ($queue_type =~ /PBS/i) {				#PBS
+		my $qstat;
 
-        #First grab all jobs
-        my @jobs = ($qstat =~ m/<Job>(.+?)<\/Job>/g);
+		# Catch queue server errors
+		# Try later if communication issues
+		while (1){
+			$qstat = `qstat -fx 2>&1`;
+			if ($qstat =~ /Unable to communicate/
+			      || $qstat =~ /[Cc]annot connect/
+			      || $qstat =~ /Connection refused/){
+				print {*STDERR} "Queue error: ", $qstat;
+				print {*STDERR} "Sleeping for 5 minutes...\n";
+				sleep 300;
+			} else {
+				last;
+			}
+		}
 
-        #Grab jobIDs for all jobs matching $Path
-        foreach my $job (@jobs) {
-        	if ($job =~ m/<Job_Id>(\d+)\S+<job_state>[QR]\S+PBS_O_WORKDIR=\S+$Path</) {
-        		push(@jobIDs, $1);
-        	}
-        }
-    }elsif ($queue_type =~ /Slurm/i) {
-        my @alljobs=`squeue -o %i_%Z -u $ENV{USER}`;
-        foreach my $job (@alljobs) {
-            if($job =~ /$Path/) {
-                my @array = split(/_/, $job);
-                push(@jobIDs,$array[0]);
-            }
-        }
-    }elsif ($queue_type =~ /SGE/i) {
-        my $qstat1 = `qstat -s pr -u $ENV{USER}`; #get qstat output for this user's jobs that are running/pending
-        my @jobs = ($qstat1 =~ m/^\s*?(\w+)/gm); #get the first column of qstat data, which contains job IDs
-        shift(@jobs); #the first line's first column is the header 'job-ID', so remove that
-        my $jlist = join(',', @jobs); #join these on commas so we can ask qstat for more info about them
+		#First grab all jobs
+		my @jobs = ($qstat =~ m/<Job>(.+?)<\/Job>/g);
 
-        my $qstat2 = `qstat -j $jlist`; #call qstat again, but this time get more info
-        my @lines = split(/\n/, $qstat2); #split each line into an array
-        my $job;
+		#Grab jobIDs for all jobs matching $Path
+		foreach my $job (@jobs) {
+			if ($job =~ m/<Job_Id>(\d+)\S+<job_state>[QR]\S+PBS_O_WORKDIR=\S+$Path</) {
+				push(@jobIDs, $1);
+			}
+		}
+	}elsif ($queue_type =~ /Slurm/i) {
+		my @alljobs=`squeue -o %i_%Z -u $ENV{USER}`;
+		foreach my $job (@alljobs) {
+			if($job =~ /$Path/) {
+				my @array = split(/_/, $job);
+				push(@jobIDs,$array[0]);
+			}
+		}
+	}elsif ($queue_type =~ /SGE/i) {
+		my $qstat1 = `qstat -s pr -u $ENV{USER}`; #get qstat output for this user's jobs that are running/pending
+		my @jobs = ($qstat1 =~ m/^\s*?(\w+)/gm); #get the first column of qstat data, which contains job IDs
+		shift(@jobs); #the first line's first column is the header 'job-ID', so remove that
+		my $jlist = join(',', @jobs); #join these on commas so we can ask qstat for more info about them
 
-        foreach my $i (0..$#lines) {
-            #it looks like job_number is always before the corresponding sge_o_workdir
-            if( $lines[$i] =~ m/job_number:\s+(\d+)/ ) {
-                $job = $1;
-            }
-            if( $lines[$i] =~ m/sge_o_workdir:\s+[\S]+$Path$/ ) { 
-            #this will return all your jobs if you run it in your home directory because $Path is ''
-                push(@jobIDs, $job);
-            }
-        }
-    }
+		my $qstat2 = `qstat -j $jlist`; #call qstat again, but this time get more info
+		my @lines = split(/\n/, $qstat2); #split each line into an array
+		my $job;
+
+		foreach my $i (0..$#lines) {
+			#it looks like job_number is always before the corresponding sge_o_workdir
+			if( $lines[$i] =~ m/job_number:\s+(\d+)/ ) {
+				$job = $1;
+			}
+			if( $lines[$i] =~ m/sge_o_workdir:\s+[\S]+$Path$/ ) {
+				#this will return all your jobs if you run it in your home directory because $Path is ''
+				push(@jobIDs, $job);
+			}
+		}
+	}
 
 
-    if(@jobIDs) {
-    	return @jobIDs;
-    }
-    return;
+	if(@jobIDs) {
+		return @jobIDs;
+	}
+	return;
 }
 
 
