@@ -14,7 +14,7 @@ files+="$(find -regex './command_line_scripts/rotate/.*/test_.*') "
 files+="$(find -regex './command_line_scripts/substitute/.*/test.xyz') "
 
 # other tests
-files+="$(find -regex './job_setup/test.(job|e.*|o.*)') "
+files+="$(find -regex './job_setup/test\.\(job\|log\|e.*\|o.*\)') "
 files+="$(find -regex './map_ligand/.*/result.xyz') "
 files+="$(find -regex './substitute.*/result.xyz') "
 
