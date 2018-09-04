@@ -49,9 +49,7 @@ sub findJob {
 		# Try later if communication issues
 		while (1){
 			$qstat = `qstat -fx 2>&1`;
-			if ($qstat =~ /Unable to communicate/
-			      || $qstat =~ /[Cc]annot connect/
-			      || $qstat =~ /Connection refused/){
+			if ($? != 0){
 				print {*STDERR} "Queue error: ", $qstat;
 				print {*STDERR} "Sleeping for 5 minutes...\n";
 				sleep 300;
@@ -59,13 +57,15 @@ sub findJob {
 				last;
 			}
 		}
+		# Comments put line breaks in, remove those
+		$qstat =~ s/\r|\n//g;
 
 		#First grab all jobs
 		my @jobs = ($qstat =~ m/<Job>(.+?)<\/Job>/g);
 
 		#Grab jobIDs for all jobs matching $Path
 		foreach my $job (@jobs) {
-			if ($job =~ m/<Job_Id>(\d+)\S+<job_state>[QR]\S+PBS_O_WORKDIR=\S+$Path</) {
+			if ($job =~ m/<Job_Id>(\d+).+<job_state>[QR].+PBS_O_WORKDIR=[^,<>]*$Path/) {
 				push(@jobIDs, $1);
 			}
 		}
