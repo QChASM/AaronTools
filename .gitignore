@@ -1,4 +1,4 @@
-template.job
+template.job*
 test/*/*/result.xyz
 test/command_line_scripts/cat_screen/**/test_*.xyz
 test/command_line_scripts/cat_substitute/**/test_*.xyz
