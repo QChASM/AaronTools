@@ -27,14 +27,17 @@ sub grab_coords {
   if(-e $filename) {                                   #check to make sure file exists first
     open (INFILE, "<$filename") or die "Can't open $filename";
 
+	my $count = 0;
     if($filename =~ /(\S+)\.log/) {                       #G09 log file
     # Snatches last geometry from LOG file
       while (<INFILE>) {
+		$count++;
         my $line=$_;
         if($line =~ / orientation:/) {
           @coords = ();
           @atoms = ();
 		  @flags = ();
+		  $count += 5;
           $line = <INFILE>;
           $line = <INFILE>;
           $line = <INFILE>;
@@ -51,8 +54,12 @@ sub grab_coords {
 			  }else{
 				push(@flags, 0);
 			  }
-              $line = <INFILE>;
-            }
+            }else{
+				print {*STDERR} "Error detected with log file on line $count\n";
+				last;
+			}
+			$count++;
+			$line = <INFILE>;
           } while(!($line =~ /--/));
         }
       }

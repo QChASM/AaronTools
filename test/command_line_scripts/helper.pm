@@ -19,7 +19,10 @@ sub trial {
     my ( $err, $test, $ref, $success );
 
     $cmd = "$ENV{QCHASM}/AaronTools/bin/$cmd";
-    if ( defined $args->{out} ) {
+    if (    defined $args->{out}
+         && $args->{out} ne 'stderr.tmp'
+         && $args->{out} ne 'stdout.tmp' )
+    {
         system
           "$cmd $args->{args} -o $args->{out} -f 2>stderr.tmp 1>stdout.xyz";
     } else {
@@ -61,18 +64,18 @@ sub test_file_contents {
     my $ref     = shift;
     my $success = 0;
 
-	unless ( -f $test && -f $ref ){
-		diag "File $ref does not exist" unless (-f $ref);
-		diag "File $test does not exist" unless (-f $test);
-		return 0;
-	}
+    unless ( -f $test && -f $ref ) {
+        diag "File $ref does not exist"  unless ( -f $ref );
+        diag "File $test does not exist" unless ( -f $test );
+        return 0;
+    }
 
     open TEST, '<', $test;
     open REF,  '<', $ref;
-	my $first = 1;
-	while ( ( my $t = <TEST> )  && ( my $r = <REF> ) ) {
-        $success = ($success || $first) && ( $t eq $r );
-		$first = 0;
+    my $first = 1;
+    while ( defined ( my $t = <TEST> ) && defined ( my $r = <REF> ) ) {
+        $success = ( $success || $first ) && ( $t eq $r );
+        $first = 0;
     }
     return $success;
 }
