@@ -473,8 +473,12 @@ sub new {
     while(@input) {
         my $line = shift @input;
 
+		if ( $line =~ /^\s*Harmonic frequencies / ){
+			@frequencies = ();
+			@intensities = ();
+			@vectors = ();
+		}
         if ($line =~ /Frequencies/) {
-
             $line =~ s/^\s+//;
 
             my @patterns = split(/\s+/, $line);
