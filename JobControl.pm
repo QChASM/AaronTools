@@ -8,7 +8,7 @@ use AaronTools::Constants qw(TEMPLATE_JOB);
 use Exporter qw(import);
 use Cwd qw(getcwd);
 
-our @EXPORT = qw(findJob killJob submit_job count_time get_job_template);
+our @EXPORT = qw(findJob killJob submit_job count_time get_job_template getStatus);
 
 my $QCHASM = $ENV{'QCHASM'};
 $QCHASM =~ s|/\z||;	#Strip trailing / from $QCHASM if it exists
@@ -106,6 +106,34 @@ sub findJob {
 	return;
 }
 
+sub getStatus {
+	my $job = shift;
+
+	if ($queue_type =~ /PBS/i) {				#PBS
+		my $qstat;
+
+		# Catch queue server errors
+		# Try later if communication issues
+		while (1){
+			$qstat = `qstat -fx $job 2>&1`;
+			if ($? != 0){
+				print {*STDERR} "Queue error: ", $qstat;
+				print {*STDERR} "Sleeping for 5 minutes...\n";
+				sleep 300;
+			} else {
+				last;
+			}
+		}
+		# Comments put line breaks in, remove those
+		$qstat =~ s/\r|\n//g;
+
+		if ( $qstat =~ /<job_state>(.)<\/job_state>/ ){
+			return $1;
+		}else{
+			return;
+		}
+	}
+}
 
 sub killJob {
     my ($job) = @_;
@@ -198,8 +226,17 @@ sub submit_job {
                 $failed = 1;
             }
         } elsif($queue_type =~ /PBS/i) {
-            if(system("qsub $jobname.job >& /dev/null")) {
-		print {*STDERR} "Submission denied for $jobname.job!\n";
+			# get job status, if applicable
+			my ($status) = findJob($dir);
+			if ( defined $status ) { $status = getStatus($status); }
+
+			if ( defined $status && $status =~ /[QR]/ ) {
+				# check to make sure job isn't already submitted
+				print {*STDERR} "Job already in queue, skipping\n";
+				$failed = 1;
+			}elsif( system("qsub $jobname.job >& /dev/null") ) {
+				# if job not in queue, then try to submit
+				print {*STDERR} "Submission denied for $jobname.job!\n";
                 $failed = 1;
             }
         } elsif($queue_type =~ /SGE/i) {
@@ -211,7 +248,7 @@ sub submit_job {
         chdir($current);
     }
     return $failed;
-} #end sub submit
+}
 
 
 sub count_time {

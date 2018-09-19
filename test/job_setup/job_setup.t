@@ -10,9 +10,11 @@ use Test::More;
 use lib $ENV{PERL_LIB};
 my $QCHASM = $ENV{QCHASM};
 $QCHASM =~ s/(.*)\/?/$1/;
+
+# test loading package
 eval {
     use lib $ENV{'QCHASM'};
-    use AaronTools::JobControl qw(get_job_template submit_job findJob killJob);
+    use AaronTools::JobControl qw(get_job_template submit_job findJob killJob getStatus);
     pass("Loaded packages");
     1;
 } or do {
@@ -20,6 +22,7 @@ eval {
     die $@;
 };
 
+# generate job file
 my $wall = 2;
 my $n_procs = 2;
 
@@ -33,6 +36,7 @@ eval {
     die $@;
 };
 
+# submit job
 my $submit_fail = submit_job( com_file     => 'test.com',
                               walltime     => $wall,
                               numprocs     => $n_procs,
@@ -48,8 +52,22 @@ if ($submit_fail) {
     sleep(10);
 }
 
+# find job
 my ($job_found) = findJob("$ENV{PWD}");
 ok( $job_found, "Find job" );
+
+# check job status
+my $status = getStatus($job_found);
+ok( $status =~ /[QR]/, "Job status: $status" );
+
+# try to submit already submitted job (should fail)
+my $submit_fail = submit_job( com_file     => 'test.com',
+                              walltime     => $wall,
+                              numprocs     => $n_procs,
+                              template_job => $template_job );
+ok($submit_fail, "Should not duplicate submission");
+
+# kill job and verify it was killed
 if ($job_found) {
 	my $failed_to_kill;
     eval {
