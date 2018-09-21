@@ -860,6 +860,9 @@ sub substitute {
 
     my $sub_object = AaronTools::Substituent->new( name => $sub, end => $end );
 
+    my $point = $sub_object->get_point(0);
+    my $sub_name = $sub_object->{name};
+
     $self->_substitute( old_sub_atoms => $old_sub_atoms,
                                   sub => $sub_object,
                                   end => $end,
@@ -2048,8 +2051,12 @@ sub new {
 
     if (exists $params{name}) {
         $self->set_name($params{name});
+
         if (-f "$QCHASM/AaronTools/Subs/$self->{name}.xyz") {
             $self->read_geometry("$QCHASM/AaronTools/Subs/$self->{name}.xyz");
+	} else {
+            #if we don't have the substituent in the library, we can tryr to build it
+            $self->build_sub();
         }
     }
 
@@ -2060,6 +2067,173 @@ sub new {
     return $self;
 }
 
+sub build_sub {
+        #this builds a substituent based on the name of the object passed to it
+        #e.g. passing it an object named 4-OMe-Ph will grab the OMe and stick it on the para position of the Ph substituent
+        #passing it 2-{4-OMe-Ph}Et will build 2-(p-methoxyphenyl)ethyl
+        my $self = shift;
+        my $subname = $self->{name}; 
+
+        if( $subname =~ m/^{/ ) {
+                $subname =~ s/^{//;
+                $subname =~ s/}$//;
+                $self->{name} = $subname;
+        }
+
+        unless( $subname ) { die "substituent name is empty, cannot build it\n"; } 
+
+        my $basename; #basename is the thing build_sub decorates with other substituents (i.e. 4-OMe-Ph: Ph is basename, 4-OMe is a decoration) 
+
+        if( $subname =~ /-/ ){
+                $basename = (split /-/, $subname)[-1]; #grab the thing after the last hyphen - this is the basename
+        }
+        if( $subname =~ /}/ ) {
+                $basename = (split /}/, $subname)[-1]; #grab the thing after the last } - this is the basename 
+        }
+        if( $subname =~ /-/ and $subname =~ /}/ ) { #if - and } are in the name, we'll take the one that gives the shortest basename
+                my $basename1 = (split /-/, $subname)[-1];
+                my $basename2 = (split /}/, $subname)[-1];
+                if( length($basename1) > length($basename2) ) {
+                        $basename = $basename2;
+                } else {
+                        $basename = $basename1;
+                }
+        }
+
+        unless( $basename ) { die "Error while trying to build $subname:\nunable to add substituents to base: '$basename'" }
+
+        my $partname = substr($subname, 0, -length($basename));
+        $partname =~ s/-$//; #decorations are the subname minus the basename and the last hyphen
+        my %parts; #dictionary for the different parts we're going to stick on the base
+        my %positions; #dictionary for the corresponding positions of the parts
+
+        my $i = 0; #the decorations are processed by sequencially removing characters from $partname
+        while( length($partname) > 0 ) {
+                my ($posi) = $partname =~ m/^((\d+-)+)/; #positions are in the format nn-mm-
+                unless( $posi ) { die "Error while trying to build $subname\nsubstituent substituent positions not specified: $partname" }; 
+                $partname =~ s/^$posi//;
+                my ($partname_without_brackets) = $partname =~  m/^{(.*)}$/; #you can put other substituents in curly brackets for added complexity
+                if(-f "$QCHASM/AaronTools/Subs/$partname.xyz") { 
+                #check to see if this part is in the library
+                        $parts{$i} = $partname ;
+                        $partname =~ s/^$partname//;
+                } elsif($partname_without_brackets and -f "$QCHASM/AaronTools/Subs/$partname_without_brackets.xyz") { 
+                #check to see if we have this part without brackets
+                #checking if $var is empty will suppress the warning for empty string concatenation
+                        $parts{$i} = $partname_without_brackets;
+                        $partname =~ s/^$partname//;
+                } else {
+                #there's probably something trailing on the partname or we'll have to build this part, too
+                #this catches cases like 26-NO2-4-F-Ph : the first time through the loop, $posi will be 26- and $partname will be NO2-4-F
+                #this'll grab the NO2 part of NO2-4-F and let 4-F be handled the next pass through the while loop
+                #it'll also handle things like 2-{2-{4-OMe-Ph}Et}CHCH2 : 2-{4-OMe-Ph}Et would be the part
+                        my ($part) = $partname =~ m/^(\w+|({.*}))/;
+                        $parts{$i} = $part;
+                        $partname =~ s/^$part//;
+                        $partname =~ s/^-//;
+                }
+                $posi =~ s/-$//;
+                my @posis = split /-/, $posi;
+                for my $p (0..$#posis) { $posis[$p] -= 1 } ;
+                $positions{$i} = [@posis];
+                $i += 1;
+        }
+
+        my $base = new AaronTools::Substituent( name => $basename ); 
+        my @n = $base->_number_atoms; #get the order of the heavy atoms
+
+        for my $key (keys %parts) {
+                my $pos_len = scalar(@{$positions{$key}});
+                my $j = 0;
+                while( $j < $pos_len ) { #this loop makes it so you can put 246-Me-Ph instead of 2-4-6-Me-Ph
+                        while( $positions{$key}[$j] > $#n ) {
+                                my $p = $positions{$key}[$j];
+                                $positions{$key}[$j] = $p % 10; #grab the ones place 
+                                my $np = ($p - $positions{$key}[$j])/10 - 1; #grab the tens place, take off 1 (0 indexing...)
+                                push $positions{$key}, $np;
+                                $pos_len += 1; #we now have an aditional place to add this substituent
+                        }
+                        $j += 1;
+                }
+                for my $at (@{$positions{$key}}) {
+                        my $H = $base->_give_me_an_H($n[$at]); #grab an H on the nth atom
+                        unless( $H ) { die "Could not find an H on atom $key of $basename"; }
+                        $base->substitute( target => $H, sub => $parts{$key}, minimize_torsion => 1 ) #make sure to minimize torsions
+                }
+        }
+
+        $self->{elements} = $base->{elements};
+        $self->{flags} = $base->{flags};
+        $self->{coords} = $base->{coords};
+
+        $self->refresh_connected();
+        return 1;
+}
+
+sub _number_atoms { 
+        #determines order of atoms on straight alkyl chains and phenyl rings
+        #I would not trust it with things that are not straight alkyl chains or phenyl rings
+        #this should probably be made more robust 
+        my $self = shift;
+        my @out; #output array - nth item in this array is the nth atom (e.g. for Et, $out[1] will be the index of C in CH3) 
+
+        my $natoms = $#{$self->{elements}};
+
+        my @heavy_atoms; #list of non-H atoms
+
+        for my $i (0..$#{$self->{elements}}) {
+                if( ${$self->{elements}}[$i] ne 'H' ) {
+                        push @heavy_atoms, $i;
+                }
+        }
+
+        if( not @heavy_atoms ) {
+                return @out; #there are no heavy atoms (i.e. you tried to number the atoms of H)
+        }
+
+        my $i = $heavy_atoms[0]; #assume the first heavy atom is the atom we'd call number 1 
+        $out[0] = $i;
+        my $b;
+
+        while( $#out < $#heavy_atoms ) { #this will go until all heavy atoms are in the list
+                                         #that's why it doesn't work well for branched chains
+                                         #once it reaches the end of the branch, it'll keep adding the same atom
+                my $distance = -1; 
+                for my $j (@{$self->{connection}->[$i]}) {
+                        if( grep( /^$j$/, @heavy_atoms ) ) {
+                                my $d = $self->distance(atom1 => $i, atom2 => $j);
+                                if( ($d < $distance or $distance < 0) and not grep( /^$j$/, @out ) ) {
+                                        $distance = $self->distance(atom1=> $i, atom2=> $j);
+                                        $b = $j;
+                                }
+                        }
+                }
+                push @out, $b;
+                $i = $b;
+        }
+                        
+        return @out;
+}
+
+sub _give_me_an_H {
+        #finds an H bonded to a given atom
+        my $self = shift; 
+        my $at = shift;
+        my $H; #atom number of an H on atom number at
+        my $natoms = $#{$self->{elements}};
+        my $min_dist = -1; 
+        for my $i (@{$self->{connection}->[$at]}) {
+                if( ${$self->{elements}}[$i] eq 'H' ) {
+                        my $distance = $self->distance(atom1 => $at, atom2 => $i); #find the closest H
+                        if( $distance < $min_dist or $min_dist < 0) { 
+                                $min_dist = $distance;
+                                $H = $i;
+                        }
+                }
+        }
+
+        return $H;
+}
 
 sub copy {
     my $self = shift;
@@ -2178,6 +2352,7 @@ sub _align_on_geometry {
     #sub_coords are aligned along x-axis, so find rotation axis that transforms x-axis to bond_axis
     my $v_x = V(1,0,0);
     my $cross = $v_x x $bond_axis;
+    unless( $cross->norm() ) { $cross = V(1,0,0); };
     my $angle = atan2($bond_axis, $v_x);
 
     $self->genrotate($cross, $angle);
