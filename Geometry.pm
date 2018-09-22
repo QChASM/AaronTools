@@ -2150,7 +2150,7 @@ sub build_sub {
                                 my $p = $positions{$key}[$j];
                                 $positions{$key}[$j] = $p % 10; #grab the ones place 
                                 my $np = ($p - $positions{$key}[$j])/10 - 1; #grab the tens place, take off 1 (0 indexing...)
-                                push $positions{$key}, $np;
+                                push @{$positions{$key}}, $np;
                                 $pos_len += 1; #we now have an aditional place to add this substituent
                         }
                         $j += 1;
