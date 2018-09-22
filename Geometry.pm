@@ -2352,7 +2352,7 @@ sub _align_on_geometry {
     #sub_coords are aligned along x-axis, so find rotation axis that transforms x-axis to bond_axis
     my $v_x = V(1,0,0);
     my $cross = $v_x x $bond_axis;
-    unless( $cross->norm() ) { $cross = V(1,0,0); };
+    unless( $cross->norm() ) { $cross = V(0,1,0); };
     my $angle = atan2($bond_axis, $v_x);
 
     $self->genrotate($cross, $angle);
