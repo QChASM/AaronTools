@@ -881,8 +881,6 @@ sub _substitute {
                                                            $params{sub},
                                                            $params{end},
                                                            $params{minimize_torsion} );
-    my $natoms = $#{$self->{elements}};
-
     my $target = $old_sub_atoms->[0];
 
     $sub->_align_on_geometry( geo => $self,
@@ -945,6 +943,7 @@ sub _substitute {
         }
     }
 
+    #print "name: $self->{name}\n";
     #print "rotatable bonds: $#{$self->{rotatable_bonds}}\n";
     #print "conformers: $#{$self->{conformers}}\n";
     #print "rotations: $#{$self->{rotations}}\n";
@@ -1214,19 +1213,6 @@ sub _reorder {
     return @orders;
 }
 
-sub _reorder_H {
-    my $geom = shift;
-    my $atoms = shift;
-    $atoms //= [ 0 .. $#{ $geom->elements() } ];
-
-    my @orders;
-    push @orders, $atoms;
-    for my $r (@$atoms) {
-        push @orders, _get_order( $geom, $atoms, $r );
-    }
-    return @orders;
-}
-
 sub RMSD_reorder {
     my $self   = shift;
     my %params = @_;
@@ -1366,7 +1352,7 @@ sub _sym_SD {
                 }
             }
         }
-        $SD += $min_d;
+        $SD += $min_d**2;
     }
 
     $SD = $SD / ($#{$self->{elements}}+1);
@@ -2146,15 +2132,6 @@ sub new {
             $self->build_sub();
         }
 
-        my $rot_sym = $self->determine_rot_sym(0);
-        if( $rot_sym > 10 ) { #basically C_infinity
-            $self->{conformer_num} = 1; 
-            $self->{conformer_angle} = 0;  
-        } elsif( $rot_sym != 1 ) { #C2, C3, etc
-            $self->{conformer_num} = 2;
-            $self->{conformer_angle} = 180/$rot_sym; 
-        } #if it's C1, we're going to have to have some info from the xyz file or build_sub
-
         unless( $self->{conformers} ) {
             push @{$self->{conformers}}, $self->{conformer_num};
             push @{$self->{rotations}}, $self->{conformer_angle};
@@ -2229,6 +2206,14 @@ sub build_sub {
 
     my $base = new AaronTools::Substituent( name => $basename ); 
     my $base_rot_sym = $base->determine_rot_sym(0);
+    if( $base_rot_sym > 10 ) { #basically C_infinity
+        $base->{conformer_num} = 1; 
+        $base->{conformer_angle} = 0;  
+    } elsif( $base_rot_sym != 1 ) { #C2, C3, etc
+        $base->{conformer_num} = 2;
+        $base->{conformer_angle} = 180/$base_rot_sym; 
+    } #if it's C1, we're going to have to have some info from the xyz file or build_sub
+        
     my @n = $base->_number_atoms; #get the order of the heavy atoms
 
     for my $key (keys %parts) {
@@ -2249,7 +2234,7 @@ sub build_sub {
         }
         for my $at (@{$positions{$key}}) {
             my $H = $base->_give_me_an_H($n[$at]); #grab an H on the nth atom
-            unless( $H ) { die "Error while trying to build $self->{name}:\nCould not find an H on atom $key of $basename\n"; }
+            unless( $H ) { die "Error while trying to build $self->{name}:\nCould not find an H on atom $n[$at] of $basename\n"; }
             # ^ this catches when the atom on the base has no H's left (e.g. 2-2-CF3-Ph) 
             $base->substitute( target => $H, sub => $parts{$key}, minimize_torsion => 1); 
         }
@@ -2258,10 +2243,13 @@ sub build_sub {
     my $new_rot_sym = $base->check_rot_sym( $base_rot_sym );
     if( $new_rot_sym != $base_rot_sym ) { #if the new substituent doesn't have the same symmetry as the 
                                           #base, we'll need to adjust the number of conformers it has
-    #    print "the symmetry of $self->{name} is different than the symmetry of $base->{name}\n"; 
-        $base->{rotations}->[0]  =  $base->{rotations}->[0] * ( 1 + $base_rot_sym % 2 );
+        #print "the symmetry of $self->{name} is different than the symmetry of $base->{name}\n"; 
+        $base->{rotations}->[0]  =  $base->{conformer_angle} * ( 1 + $base_rot_sym % 2 );
         $base->{conformers}->[0] =  360/$base->{rotations}->[0];
-    }     
+    } else {
+        $base->{rotations}->[0]  =  $base->{conformer_angle};
+        $base->{conformers}->[0] =  $base->{conformer_num};
+    }
 
     $self->{elements}        =    $base->{elements};
     $self->{flags}           =    $base->{flags};
@@ -2383,23 +2371,23 @@ sub _number_atoms {
 }
 
 sub _give_me_an_H {
-        #finds an H bonded to a given atom
-        my $self = shift; 
-        my $at = shift;
-        my $H; #atom number of an H on atom number at
-        my $natoms = $#{$self->{elements}};
-        my $min_dist = -1; 
-        for my $i (@{$self->{connection}->[$at]}) {
-                if( ${$self->{elements}}[$i] eq 'H' ) {
-                        my $distance = $self->distance(atom1 => $at, atom2 => $i); #find the closest H
-                        if( $distance < $min_dist or $min_dist < 0) { 
-                                $min_dist = $distance;
-                                $H = $i;
-                        }
-                }
+    #finds an H bonded to a given atom
+    my $self = shift; 
+    my $at = shift;
+    my $H; #atom number of an H on atom number at
+    my $natoms = $#{$self->{elements}};
+    my $min_dist = -1; 
+    for my $i (@{$self->{connection}->[$at]}) {
+        if( ${$self->{elements}}[$i] eq 'H' ) {
+            my $distance = $self->distance(atom1 => $at, atom2 => $i); #find the closest H
+            if( $distance < $min_dist or $min_dist < 0) { 
+                $min_dist = $distance;
+                $H = $i;
+            }
         }
+    }
 
-        return $H;
+    return $H;
 }
 
 sub determine_rot_sym {
@@ -2415,7 +2403,7 @@ sub determine_rot_sym {
     }
 
     my $targets = [(0..$#{$self->{elements}})];
-    my $SD_min = 1E-1; #it's a low bar to be symmetric
+    my $SD_min = 1E-4; #it's a low bar to be symmetric
     my $order = 0;
     my $axis = $self->get_point($atom);
     my $ref_geom = $self->copy; #unrotated copy
@@ -2442,7 +2430,7 @@ sub check_rot_sym {
     my $self = shift;
     my $order = shift; #n in C_n for the level of rotational symmetry we're expecting 
 
-    my $threshold = 5E-1; #really easy threshold b/c we'd have to do a really small increment otherwise 
+    my $threshold = 5E-4; #really easy threshold b/c we'd have to do a really small increment otherwise 
     my $increment = 5;
     my $ref_geom = $self->copy; #make a copy 
     my $axis = $self->get_point(0);
