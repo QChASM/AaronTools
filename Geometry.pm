@@ -458,7 +458,7 @@ sub compare_connectivity {
     my ($geo_ref, $thres) = ($params{geo_ref}, $params{thres});
 
     if ($#{ $self->{connection} } != $#{ $geo_ref->{connection} }) {
-        warn "Number of atoms are not equal";
+        warn "Number of atoms are not equal for $self->{name}";
     }
 
     my %broken;
