@@ -31,11 +31,6 @@ push @args,
     message => 'Test animate',
     out     => '01/test_animate.xyz',
     ref     => '01/ref_animate.xyz' };
-push @args,
-  { args    => '02/trial.log',
-    message => 'Bad log file',
-    ref     => '02/ref.out',
-    out     => 'stderr.tmp' };
 
 foreach my $a (@args) {
     helper::trial( $cmd, $a );

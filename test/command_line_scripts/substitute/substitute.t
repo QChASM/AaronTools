@@ -52,13 +52,6 @@ push @args,
 	rmsd => 0.5,
 	reorder => 1,
 	message => 'Oddly ordered substituents' };
-push @args,
-  { args => '05/methane.xyz -s 1=22-{3-5-CF3-Ph}Et',
-    ref => '05/ref.xyz',
-	out => '05/test.xyz',
-	rmsd => 0.5,
-	reorder => 1,
-	message => 'building substituents' };
 
 foreach my $a (@args) {
     helper::trial( $cmd, $a );
