@@ -932,13 +932,21 @@ sub number_of_rotations {
     my $rot_number_ligand = 0;
 
     for my $sub (keys %{ $self->substrate()->{substituents} }) {
-        for my $bond (@{$self->substrate()->{substituents}->{$sub}->{rotatable_bonds}}) {
+        if( $self->substrate->{substituents}->{$sub}->{rotatable_bonds} ) {
+            for my $bond (@{$self->substrate()->{substituents}->{$sub}->{rotatable_bonds}}) {
+                $rot_number_substrate += 1;
+            }
+        } else {
             $rot_number_substrate += 1;
         }
     }
 
     for my $sub (keys %{ $self->ligand()->{substituents} }) {
-        for my $bond (@{$self->ligand()->{substituents}->{$sub}->{rotatable_bonds}}) {
+        if( $self->ligand->{substituents}->{$sub}->{rotatable_bonds} ) {
+            for my $bond (@{$self->ligand()->{substituents}->{$sub}->{rotatable_bonds}}) {
+                $rot_number_ligand += 1;
+            }
+        } else {
             $rot_number_ligand += 1;
         }
     }
@@ -1346,7 +1354,6 @@ sub sub_rotate {
     if( exists $params{bond} ) { #rotate just one bond in the substituent
         my $atom1 = $sub->{rotatable_bonds}->[$bond_index]->[0];
         my $atom2 = $sub->{rotatable_bonds}->[$bond_index]->[1];
-
         my $point;
         my $axis;
         my $fragment;
@@ -1588,7 +1595,7 @@ sub make_conformer {
                                 $self->{substituents}->{$targets[$i]}->{conformers}->[$j];
             my $angle = $self->{substituents}->{$targets[$i]}->{rotations}->[$j] * $rotations;
             if( $angle != 0 ) { #don't waste time rotating by 0 degrees 
-                $self->sub_rotate( target => $targets[$i], angle => $angle , bond => $j );
+		$self->sub_rotate( target => $targets[$i], angle => $angle , bond => $j );
             }
             $self->{substituents}->{$targets[$i]}->{flags} = [(0) x
                 scalar @{ $self->{substituents}->{$targets[$i]}->{flags} }];
