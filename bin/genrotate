@@ -201,21 +201,23 @@ genrotate [options] -v (x y z | a1 a2 | a sub_name) -n rotations file
 
 =over
 
-=item B<-v (x y z | a1 a2)>, B<--vector (x y z | a1 a2)>
+=item B<-v (x y z | a1 a2 | a1 sub_name)>, B<--vector (x y z | a1 a2 | a1 sub_name)>
 
 The rotation vector defined by the points (0, 0, 0), (x, y, z),
 defined by the vector from a1 to a2 (1-indexed atoms),
-or defined by the connection from the substituent at a to the rest of the molecule.
+or defined by the connection from the substituent at atom a1 to the rest of the molecule.
 Should be space separated.
 
 =item B<-a angle>, B<--angle angle>
 
 Rotate by ANGLE degrees.
+If using the {-v a1 sub_name} form, the angle from the substituent's conformer definition is used instead.
 
 =item B<-n num>, B<--nrot num>
 
 If used with --angle specified, repeats the rotation NUM times.
 Otherwise, performs NUM equally spaced rotations (implies ANGLE=360/NUM).
+If using the {-v a1 sub_name} form, the number of rotations from the substituent's conformer definition is used instead.
 
 =item B<-t list>, B<--targets list>
 
