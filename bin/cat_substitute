@@ -50,7 +50,11 @@ sub main {
     $opt{output} = _utils::handle_overwrite( $opt{output} ) unless $opt{force};
     _utils::mkdirsfor( $opt{output} ) if $opt{output};
     print("Saving substituted coords to $opt{output}\n") if $opt{output};
-    $geom->printXYZ( $opt{output}, '', 1 );
+    unless( $opt{conflist} ) { $opt{conflist} = 1 };
+    for my $conf ( split(',', $opt{conflist}) ) {
+        $geom->make_conformer( new_number => $conf );
+        $geom->printXYZ( $opt{output}, '', 1 );
+    }
 
     return 0;
 }
@@ -90,7 +94,8 @@ GetOptions( 'help|h'            => \$opt{help},
             'ligand|l=s%{,}'    => \%liglist,
             'minimize|m'        => \$opt{minimize},
             'force|f'           => \$opt{force},
-            'output|o=s'        => \$opt{output} )
+            'output|o=s'        => \$opt{output}, 
+            'conformer|c=s'     => \$opt{conflist} )
   or pod2usage(
     { -exitval => 1,
       -verbose => 1
@@ -148,6 +153,10 @@ Output to file instead of STDOUT. Optionally, force overwrite if file exists
 =item B<-h>, B<--help>
 
 Print this help message and exit
+
+=item B<-c>, B<--conformer>
+
+Apply necessary rotations to give the specified conformer(s)
 
 =back
 

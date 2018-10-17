@@ -45,6 +45,12 @@ push @args,
     out     => '02/test_min.xyz',
     ref     => '02/ref_min.xyz',
     rmsd    => 0.3 };
+push @args,
+  { args    => '01/test.xyz -c=47 -l 52=1-{34-OMe-Ph}Me',
+    message => 'Generate correct conformer',
+    out     => '03/test.xyz',
+    ref     => '03/ref.xyz',
+    rmsd    => 0.3 };
 
 foreach my $a (@args) {
     helper::trial( $cmd, $a );

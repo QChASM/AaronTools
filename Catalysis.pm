@@ -7,7 +7,7 @@ use AaronTools::Constants qw(CUTOFF NAMES);
 use AaronTools::Atoms qw (:BASIC :LJ);
 
 my $QCHASM = $ENV{'QCHASM'};
-$QCHASM =~ s|/\z||;	#Strip trailing / from $QCHASM if it exists
+$QCHASM =~ s|/\z||;    #Strip trailing / from $QCHASM if it exists
 my $mass = MASS;
 my $CUTOFF = CUTOFF;
 my $TMETAL = TMETAL;
@@ -46,12 +46,12 @@ sub new {
             #ligand backbone and sub
             $self->detect_component();
 
-			my @keyatoms = map { @$_ } @{ $self->{ligand_keyatoms} };
-			for my $k ( keys %{ $substituents->{ligand} } ){
-				if ( grep { $k == $_ } @keyatoms ){
-					die "Cannot assign substituents to key atoms";
-				}
-			}
+            my @keyatoms = map { @$_ } @{ $self->{ligand_keyatoms} };
+            for my $k ( keys %{ $substituents->{ligand} } ){
+                if ( grep { $k == $_ } @keyatoms ){
+                    die "Cannot assign substituents to key atoms";
+                }
+            }
             $self->ligand()->set_substituents($substituents->{ligand});
             $self->ligand()->detect_backbone_subs( no_new_subs => $params{no_new_subs} );
             #substrate subs
@@ -83,7 +83,7 @@ sub detect_component {
     my $self = shift;
 
     my $TM;
-	#Need to modify to account for TM in the ligand itself!
+    #Need to modify to account for TM in the ligand itself!
     for my $atomi (0..$#{ $self->{elements} }) {
         if (exists $TMETAL->{$self->{elements}->[$atomi]}) {
             $TM = $atomi;
@@ -642,13 +642,13 @@ sub screen_subs {
     if ($component eq $LIGAND) { $object = $self->ligand() };
     if ($component eq $SUBSTRATE) { $object = $self->substrate() };
 
-	# ligand can take named substitutions, substrate cannot
-	my @subs;
-	if ( $component eq $LIGAND ) {
-		@subs = keys %params;
-	} else {
-		@subs = grep { $_ =~ /(\d+,?)+/ } keys %params;
-	}
+    # ligand can take named substitutions, substrate cannot
+    my @subs;
+    if ( $component eq $LIGAND ) {
+        @subs = keys %params;
+    } else {
+        @subs = grep { $_ =~ /(\d+,?)+/ } keys %params;
+    }
 
     my @subs_final = ({});
     for my $key (@subs) {
@@ -702,15 +702,15 @@ sub substitute {
     my @inexplicit_subs = grep { $_ !~ /^\d+$/ } keys %substituents;
     my @explicit_subs = grep { $_ =~ /^\d+$/ } keys %substituents;
 
-	# fail if substitution requested for key atoms
-	if ( $component eq $LIGAND ){
-		my @keyatoms = map { @$_ } @{ $self->{ligand_keyatoms} };
-		for my $k ( @keyatoms ){
-			if ( grep { $_ == $k } @explicit_subs ){
-				die "Cannot substitute key atoms\n"
-			}
-		}
-	}
+    # fail if substitution requested for key atoms
+    if ( $component eq $LIGAND ){
+        my @keyatoms = map { @$_ } @{ $self->{ligand_keyatoms} };
+        for my $k ( @keyatoms ){
+            if ( grep { $_ == $k } @explicit_subs ){
+                die "Cannot substitute key atoms\n"
+            }
+        }
+    }
     for my $inexplicit_sub (@inexplicit_subs) {
         my @subs = grep { $object->{substituents}->{$_}->{name} eq $inexplicit_sub }
                         keys %{ $object->{substituents} };
@@ -1004,20 +1004,20 @@ sub _conf_max_array {
 
     for my $target (sort { $a <=> $b } keys %{ $self->ligand()->{substituents} }) {
         #NOTE reverse order here
-	my $confs = 1;
+        my $confs = 1;
         for my $cf (@{$self->ligand->{substituents}->{$target}->{conformers}}) {
-		$confs *= $cf;
-	}
-	push(@conf_max_array, $confs);
+            $confs *= $cf; #maximum conformers is the product of the conformers of each sub
+        }
+        push(@conf_max_array, $confs);
     }
 
     for my $target (sort { $a <=> $b } keys %{ $self->substrate()->{substituents} }) {
         #NOTE reverse order here
-	my $confs = 1;
+    my $confs = 1;
         for my $cf (@{$self->substrate->{substituents}->{$target}->{conformers}}) {
-		$confs *= $cf;
-	}
-	push(@conf_max_array, $confs);
+        $confs *= $cf;
+    }
+    push(@conf_max_array, $confs);
     }
 
     return [@conf_max_array];
@@ -1035,16 +1035,14 @@ sub max_conf_number {
 
     if ($sub <= $#ligand_subs) {
         $max = 1;
-	for my $cf (@{$self->ligand()->{substituents}->{$ligand_subs[$sub]}->{conformers}}) {
-	    $max *= $cf;
-	}
-#	$max = $self->ligand()->{substituents}->{$ligand_subs[$sub]}->{conformers};
-    }else {
-    	$max = 1;
-	for my $cf (@{$self->substrate()->{substituents}->{$substrate_subs[$sub-$#ligand_subs-1]}->{conformers}}) {
-	    $max *= $cf;
-	}
-#        $max = $self->substrate()->{substituents}->{$substrate_subs[$sub-$#ligand_subs-1]}->{conformer_num};
+        for my $cf (@{$self->ligand()->{substituents}->{$ligand_subs[$sub]}->{conformers}}) {
+            $max *= $cf;
+        }
+    } else {
+        $max = 1;
+        for my $cf (@{$self->substrate()->{substituents}->{$substrate_subs[$sub-$#ligand_subs-1]}->{conformers}}) {
+            $max *= $cf;
+        }
     }
 
     return $max;
@@ -1316,17 +1314,17 @@ sub sub_rotate {
         my $axis;
         my $fragment;
         if( $bond_index == 0 ) { 
-	    #the first bond will usually be [$sub->{end}, 0] where 0 is the index of the substituent atom
+        #the first bond will usually be [$sub->{end}, 0] where 0 is the index of the substituent atom
             $point = $self->get_point($sub->{end});
             $axis = $self->get_bond($sub->{end}, $target);
             $fragment = [(0..$#{$sub->{elements}})]; #get everything 
         } else {
-	    #other bonds will be just substituent indexing
+        #other bonds will be just substituent indexing
             $point = $sub->get_point($atom1);
             $axis = $sub->get_bond($atom1, $atom2); 
             $fragment = $sub->get_all_connected( $atom2, $atom1 ); #get everything connected to this bond
         }
-        $sub->center_genrotate( $point, $axis, deg2rad($angle), $fragment );
+        $sub->center_genrotate( $point, $axis, deg2rad($angle), $fragment ); #apply rotation
     } else {
         my $point = $self->get_point($sub->{end});
         my $axis = $self->get_bond($sub->{end}, $target);
@@ -1407,7 +1405,7 @@ sub update_geometry {
 
     my $head = $#{ $self->{backbone}->{coords} } + 1;
     for my $target (sort {$a <=> $b} keys %{ $self->{substituents} }) {
-	my $coords = [$self->{coords}->[$target],
+    my $coords = [$self->{coords}->[$target],
                       @{ $self->{coords} }[$head..$head +
                         $#{ $self->{substituents}->{$target}->{elements} } - 1]];
         $self->{substituents}->{$target}->{coords} = $coords;
@@ -1494,18 +1492,18 @@ sub _rearrange_active_con {
         }
     }
 
-	if ($self->{substituents}) {
-		for my $key (sort {$a <=> $b} keys %{ $self->{substituents} }) {
-			if (exists $old_new->{$self->{substituents}->{$key}->{end}} ){
-				$self->{substituents}->{$key}->{end} = $old_new->{$self->{substituents}->{$key}->{end}};
-			}
-			if (exists $old_new->{$key} &&
-				($old_new->{$key} != $key)) {
-				$self->{substituents}->{$old_new->{$key}} = $self->{substituents}->{$key};
-				delete $self->{substituents}->{$key};
-			}
-		}
-	}
+    if ($self->{substituents}) {
+        for my $key (sort {$a <=> $b} keys %{ $self->{substituents} }) {
+            if (exists $old_new->{$self->{substituents}->{$key}->{end}} ){
+                $self->{substituents}->{$key}->{end} = $old_new->{$self->{substituents}->{$key}->{end}};
+            }
+            if (exists $old_new->{$key} &&
+                ($old_new->{$key} != $key)) {
+                $self->{substituents}->{$old_new->{$key}} = $self->{substituents}->{$key};
+                delete $self->{substituents}->{$key};
+            }
+        }
+    }
 
     if ($self->{active_centers}) {
         for my $i (0..$#{ $self->{active_centers} }) {
@@ -1530,6 +1528,8 @@ sub make_conformer {
         for my $j (0..$#{$self->{substituents}->{$targets[$i]}->{rotations}}) {
             $mod_array[$j] = 1;
             for my $k ($j+1..$#{$self->{substituents}->{$targets[$i]}->{rotations}}) {
+            #mod_array is needed to determine when we increment a certain bond rotation in a flexible substituent
+            #if sub->{conformers} is (3 2 2), we only want to increment the 0th bond every 4 conformers
                 $mod_array[$j] *= $self->{substituents}->{$targets[$i]}->{conformers}->[$k];
             }
         }
@@ -1538,9 +1538,11 @@ sub make_conformer {
                                 $self->{substituents}->{$targets[$i]}->{conformers}->[$j];
             $rotations -= int( ($old_array->[$i]-1)/$mod_array[$j] ) %
                                 $self->{substituents}->{$targets[$i]}->{conformers}->[$j];
+            #rotations counts up from old_array as if the nth number is of base sub->{conformers}->[$j]
+            #i.e, if conformers are (3 2), rotations[j] will be (0 0) (0 1) (1 0) (1 1) (2 0) (2 1) for the respective Cf
             my $angle = $self->{substituents}->{$targets[$i]}->{rotations}->[$j] * $rotations;
             if( $angle != 0 ) { #don't waste time rotating by 0 degrees 
-		$self->sub_rotate( target => $targets[$i], angle => $angle , bond => $j );
+                $self->sub_rotate( target => $targets[$i], angle => $angle , bond => $j );
             }
             $self->{substituents}->{$targets[$i]}->{flags} = [(0) x
                 scalar @{ $self->{substituents}->{$targets[$i]}->{flags} }];

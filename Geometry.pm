@@ -1,4 +1,5 @@
 #Contributors Yanfei Guan and Steven E. Wheeler
+
 use lib $ENV{'QCHASM'};
 use lib $ENV{'PERL_LIB'};
 
@@ -611,6 +612,10 @@ sub _change_distance {
 
     my ($v1, $v2);
     unless($all_atoms1) {
+        unless( $current_distance ) {
+            warn "distance between atoms $atom1 and $atom2 is 0\n";
+            $current_distance = 1;
+        }
         $v2 = $v12 * $difference / $current_distance;
         $v1 = V(0, 0, 0);
     }else {
@@ -669,6 +674,10 @@ sub genrotate {
     my ($self, $v, $angle, $targets) = @_;
 
     my $a = cos($angle/2);
+    unless( $v->norm() ) { 
+        warn "vector $v has 0 length in genrotate, using y-vec instead\n";
+        $v = V(0,1,0); 
+    };
     $v /= $v->norm();
     $v *= sin($angle/2);
 
@@ -942,17 +951,6 @@ sub _substitute {
             push @{$self->{rotatable_bonds}}, \@fixed_bond;
         }
     }
-
-    #print "name: $self->{name}\n";
-    #print "rotatable bonds: $#{$self->{rotatable_bonds}}\n";
-    #print "conformers: $#{$self->{conformers}}\n";
-    #print "rotations: $#{$self->{rotations}}\n";
-    #for my $i (0..$#{$self->{rotatable_bonds}}) {
-    #    my @a;
-    #    $a[0] = ${$self->{rotatable_bonds}->[$i]}[0] + 1;
-    #    $a[1] = ${$self->{rotatable_bonds}->[$i]}[1] + 1;
-    #    print "bond @a has $self->{conformers}->[$i] conformers, each $self->{rotations}->[$i] degrees apart\n";
-    #}
 
     if ($minimize_torsion) {
         $self->minimize_torsion(start_atom => $target,
@@ -2243,7 +2241,6 @@ sub build_sub {
     my $new_rot_sym = $base->check_rot_sym( $base_rot_sym );
     if( $new_rot_sym != $base_rot_sym ) { #if the new substituent doesn't have the same symmetry as the 
                                           #base, we'll need to adjust the number of conformers it has
-        #print "the symmetry of $self->{name} is different than the symmetry of $base->{name}\n"; 
         $base->{rotations}->[0]  =  $base->{conformer_angle} * ( 1 + $base_rot_sym % 2 );
         $base->{conformers}->[0] =  360/$base->{rotations}->[0];
     } else {
@@ -2270,6 +2267,10 @@ sub _replace_common_names {
     $name =~ s/^MePh2/11-Ph-Me/;                #diphenylmethyl
     $name =~ s/^MePh3/111-Ph-Me/;               #triphenylmethyl
     $name =~ s/^EtF5$/1-CF3-11-F-Me/;           #pentafluoroethyl
+    $name =~ s/^sBu$/1-Et-Et/;                  #sec-butyl
+    $name =~ s/^iBu$/1-iPr-Me/;                 #iso-butyl
+    $name =~ s/^nBu$/1-{1-Et-Me}Me/;            #n-butyl
+    $name =~ s/^Pr$/1-Et-Me/;                   #n-propyl
     #misc protecting groups
     $name =~ s/^Boc$/2-tBu-COOH/;               #t-butyloxycarbonyl 
     $name =~ s/^Cbz$/2-Bn-COOH/;                #carboxybenzyl
@@ -2289,7 +2290,9 @@ sub _find_matching_brackets {
     my $str = shift;
 
     my $position = 1;
-    my $counter = 0;
+    my $counter = 0; #counter ++ when { is found
+                     #counter -- when } is found
+                     #return when counter = 0
     while( $position <= length($str) ) {
         my $s = substr $str, 0, $position; 
         if( $s =~ m/{$/ ) {
@@ -2430,7 +2433,7 @@ sub check_rot_sym {
     my $self = shift;
     my $order = shift; #n in C_n for the level of rotational symmetry we're expecting 
 
-    my $threshold = 5E-4; #really easy threshold b/c we'd have to do a really small increment otherwise 
+    my $threshold = 5E-1; #really easy threshold b/c we'd have to do a really small increment otherwise 
     my $increment = 5;
     my $ref_geom = $self->copy; #make a copy 
     my $axis = $self->get_point(0);
