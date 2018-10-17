@@ -920,48 +920,6 @@ sub number_of_conformers {
     }
 }
 
-#gives the number of rotatable bonds on the substrate, ligand, or both
-sub number_of_rotations {
-    my $self = shift;
-    my %params = @_;
-    my ($object) = ( $params{component} );
-
-    $object //= '';
-
-    my $rot_number_substrate = 0;
-    my $rot_number_ligand = 0;
-
-    for my $sub (keys %{ $self->substrate()->{substituents} }) {
-        if( $self->substrate->{substituents}->{$sub}->{rotatable_bonds} ) {
-            for my $bond (@{$self->substrate()->{substituents}->{$sub}->{rotatable_bonds}}) {
-                $rot_number_substrate += 1;
-            }
-        } else {
-            $rot_number_substrate += 1;
-        }
-    }
-
-    for my $sub (keys %{ $self->ligand()->{substituents} }) {
-        if( $self->ligand->{substituents}->{$sub}->{rotatable_bonds} ) {
-            for my $bond (@{$self->ligand()->{substituents}->{$sub}->{rotatable_bonds}}) {
-                $rot_number_ligand += 1;
-            }
-        } else {
-            $rot_number_ligand += 1;
-        }
-    }
-
-    if ($object eq $SUBSTRATE) {
-        return $rot_number_substrate;
-    }elsif ($object eq $LIGAND) {
-        return $rot_number_ligand;
-    }else {
-        my $total = $rot_number_substrate + $rot_number_ligand;
-        return $total;
-    }
-}
-
-
 #FIXME make conformer for the whole geometry
 #not only ligand or substratwe
 sub make_conformer {
@@ -978,8 +936,8 @@ sub make_conformer {
     $new_array //= $self->conf_array(number => $number);
     $old_array //= $self->conf_array(number => $current_number);
 
-    my $num_l = $self->number_of_rotations( component => $LIGAND );
-    my $num_s = $self->number_of_rotations( component => $SUBSTRATE );
+    my $num_l = keys $self->ligand->{substituents};
+    my $num_s = keys $self->substrate->{substituents};
 
     if ($num_l > 0) {
         $self->ligand()->make_conformer( current => [@$old_array[0..$num_l]],
@@ -1519,19 +1477,6 @@ sub replace_substituent {
 
     $self->{substituents}->{$target} = $new_sub;
 
-    #for my $i (keys $self->{substituents}) {
-    #    my @a;
-    #    if( $self->{substituents}->{$i}->{rotatable_bonds} ) {
-    #        print "there is a rotatable substituent named $self->{substituents}->{$i}->{name}\n"; 
-    #        for my $b (0..$#{$self->{substituents}->{$i}->{rotatable_bonds}}) {
-    #            $a[0] = $self->{substituents}->{$i}->{rotatable_bonds}->[$b]->[0] + 1;
-    #            $a[1] = $self->{substituents}->{$i}->{rotatable_bonds}->[$b]->[1] + 1;
-    #            print "cat: bond @a has $self->{substituents}->{$i}->{conformers}->[$b] conformers,"
-    #                 ."each $self->{substituents}->{$i}->{rotations}->[$b] degrees apart\n";
-    #        }
-    #    }
-    #}
-            
 }
 
 sub _rearrange_active_con {
