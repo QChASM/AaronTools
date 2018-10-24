@@ -370,6 +370,8 @@ sub refresh_connected {
 
 
 sub get_all_connected {
+    #rewrite, but with recursion (see buttercup)
+    #this doesn't work sometimes and I don't know why 
     my ($self, $start_atom, $avoid_atom) = @_;
     my @connected = @{$self->{connection}};
     my @connected_temp = map { [@$_] } @connected;
@@ -390,7 +392,7 @@ sub get_all_connected {
     while(@positions) {
       my $position = shift(@positions);
       foreach my $atom (@{$connected_temp[$position]}) { 	#grab all atoms connected to current atom and add to queue (unless already visited)
-        if($atom >= 0 && !exists $visited{$atom}) {
+        if($atom >= 0 && !exists $visited{$atom}){
           push(@positions, $atom);
           $visited{$atom} = 0;
         }
@@ -905,7 +907,6 @@ sub _substitute {
     $target -= grep { $_ < $target } @$delete_atoms;
     $end -= grep { $_ < $end } @$delete_atoms;
 
-
     #modify the constraint, since the deleted atoms can change atom numbers
     $self->_rearrange_con_sub($delete_atoms);
 
@@ -945,7 +946,7 @@ sub _substitute {
                 if( $fixed_bond[$i] != 0 ) { #if it's not the first atom, add the number of atoms in the molecule that don't belong to the substituent
                     $fixed_bond[$i] += $#{$self->{elements}} - $#{$sub->{elements}}; 
                 } else {
-                    $fixed_bond[$i] += $target; 
+                    $fixed_bond[$i] += $target;
                 }
             }
             push @{$self->{rotatable_bonds}}, \@fixed_bond;
@@ -1103,30 +1104,46 @@ sub LJ_energy_with {
 #finds minimum energy structure (based on LJ potential) by rotating list of target atoms around bond between $atom1 and $atom2
 #TODO: if no list of @targets provided, rotate fragment that starts with atom1!
 sub minimize_torsion {
-  my $self = shift;
-  my %param = @_;
-  my ($atom1, $atom2) = ( $param{start_atom}, $param{end_atom} );
+    my $self = shift;
+    my %param = @_;
+    my ($atom1, $atom2) = ( $param{start_atom}, $param{end_atom} );
 
-  my $targets = $self->get_all_connected($atom1, $atom2);
+    my $targets = $self->get_all_connected($atom1, $atom2);
 
-  my $increment = 5; #angle increment to search over
+    my $increment = 5; #angle increment to search over
 
-  my $E_min = 1E20;
-  my $angle_min = 0;
-
-  my $axis = $self->get_bond($atom2, $atom1);
-
-  foreach my $count (0..360/$increment + 1) {
-    my $angle = $count*$increment;
-    $self->center_genrotate($atom1, $axis, deg2rad($increment), $targets);
-    my $energy = $self->LJ_energy();
-    if($energy < $E_min) {
-      $angle_min = $angle;
-      $E_min = $energy;
+    my @bonds = [($atom2, $atom1)];
+    if( $self->{rotatable_bonds} ) {
+        for my $bond ( @{$self->{rotatable_bonds}} ) {
+            if( $bond->[0] != $bonds[0]->[0] and $bond->[1] != $bonds[0]->[1] ) {
+                push @bonds, $bond;
+            }
+        }
     }
-  }
+    for my $bond (@bonds) {
+        my $a1 = $bond->[0];
+        my $a2 = $bond->[1];
+        if( grep( /^$a2$/, @{$targets} ) ) {
+            my $fragment = $self->get_all_connected($a2, $a1);
+            if( $fragment ) { 
+                my $E_min = -1;
+                my $angle_min = 0;
+                my $point = $self->get_point($a2);
+                my $axis = $self->get_bond($a2, $a1);
 
-  $self->center_genrotate($atom1, $axis, deg2rad($angle_min), $targets);
+                foreach my $count (0..360/$increment + 1) {
+                    my $angle = $count*$increment;
+                    $self->center_genrotate($point, $axis, deg2rad($increment), $fragment);
+                    my $energy = $self->LJ_energy();
+                    if($energy < $E_min or $E_min == -1) {
+                      $angle_min = $angle;
+                      $E_min = $energy;
+                    }
+                }
+                $self->center_genrotate($point, $axis, deg2rad($angle_min), $fragment);
+            }
+        }
+    }
 }
 
 
@@ -1151,10 +1168,8 @@ sub _sort_conn {
     my ( $geom, $index ) = @_;
 
     my @indicies = @{ $geom->{connection}->[$index] };
-    @indicies = sort {
-        $CONNECTIVITY->{ $geom->{elements}->[$b] }
-          <=> $CONNECTIVITY->{ $geom->{elements}->[$a] }
-    } @indicies;
+    @indicies = sort { $CONNECTIVITY->{ $geom->{elements}->[$b] } <=> $CONNECTIVITY->{ $geom->{elements}->[$a] }
+                     } @indicies;
 
     return \@indicies;
 }
@@ -1339,13 +1354,13 @@ sub _sym_SD {
 
     for my $i (0..$#{$self->{elements}}) {
         my $min_d;
-        for my $j (0..$#{$self->{elements}}) {
+        for my $j (0..$#{$ref_geom->{elements}}) {
             if( ${$self->{elements}}[$i] eq ${$ref_geom->{elements}}[$j] ) {
                 my $d = $self->distance(atom1 => $i, atom2 => $j, geometry2 => $ref_geom );
                 if( not $min_d or $d < $min_d ) {
                     $min_d = $d;
                 }
-                if( $d < 1 ) { #there's probably/hopefully nothing closer than this - slight performace improvement
+                if( $d < 0.1 ) { #there's probably/hopefully nothing closer than this - slight performace improvement
                     last;
                 }
             }
@@ -1520,6 +1535,61 @@ sub RMSD_mirror {
 }
 
 
+sub align_on_subs {
+    #rotates substituents (on their {rotatable_bonds}) to get $self's structure
+    #as close as possible to $ref_geom's structure
+    my $self = shift;
+    my $ref_geom = shift;
+
+    my $threshold = 1E-4;
+    my $increment = 5;
+    my $min_dev = $self->_sym_SD($ref_geom);
+    my $delta_dev = $min_dev;
+
+    while ($delta_dev > $threshold) { #keep trying to do better as long as we're making good improvements
+        $delta_dev = $min_dev;
+        if( 1 ) {
+            my $angle = $increment;
+            my $bond_axis = $self->get_point(0);
+            my $point = $self->get_point(0);
+            my $min_angle = 0;
+
+            while ($angle <= 360 ) {
+                $self->center_genrotate( $point, $bond_axis, deg2rad($increment) );
+                my $sd = $self->_sym_SD($ref_geom);
+                
+                if( $sd < $min_dev ) {
+                    $min_dev = $sd;
+                    $min_angle = $angle;
+                }
+                $angle += $increment;
+            }
+            $self->center_genrotate( $point, $bond_axis, deg2rad($min_angle));
+        }
+
+        for my $bond (@{$self->{rotatable_bonds}}) {                            #go through each bond
+            my $fragment = $self->get_all_connected( $bond->[1], $bond->[0] );  #grab the atoms of the substituent 
+            my $angle = $increment;
+            my $bond_axis = $self->get_bond( $bond->[0], $bond->[1] );
+            my $point = $self->get_point( $bond->[1] );
+            my $min_angle = 0;
+
+            while ($angle <= 360 ) {                                            #rotate many times
+                $self->center_genrotate( $point, $bond_axis, deg2rad($increment), $fragment );
+                my $sd = $self->_sym_SD($ref_geom);
+            
+                if( $sd < $min_dev ) {
+                    $min_dev = $sd;                                             #store the rotation that minimizes the deviation
+                    $min_angle = $angle;
+                }
+                $angle += $increment;
+            }
+            #rotate the thing to be in the orientation that's more similar to ref_geom
+            $self->center_genrotate( $point, $bond_axis, deg2rad($min_angle), $fragment ); 
+        }
+        $delta_dev -= $min_dev;
+    }
+}
 
 
 #this function map a catalyst to a ts from TS library. The old catalyst
@@ -2174,7 +2244,7 @@ sub build_sub {
     my $partname = substr($self->{name}, 0, -length($basename));
     $partname =~ s/-$//; #decorations are the subname minus the basename and the last hyphen
     my %parts; #dictionary for the different parts we're going to stick on the base
-    my %positions; #dictionary for the corresponding positions of the parts
+    my @positions; #dictionary for the corresponding positions of the parts
 
     my $i = 0; #the decorations are processed by sequencially removing characters from $partname
     while( length($partname) > 0 ) {
@@ -2198,7 +2268,7 @@ sub build_sub {
         $posi =~ s/-$//;
         my @posis = split /-/, $posi;
         for my $p (0..$#posis) { $posis[$p] -= 1 } ;
-        $positions{$i} = [@posis];
+        $positions[$i] = [@posis];
         $i += 1;
     }
 
@@ -2215,26 +2285,26 @@ sub build_sub {
     my @n = $base->_number_atoms; #get the order of the heavy atoms
 
     for my $key (keys %parts) {
-        my $pos_len = scalar(@{$positions{$key}});
+        my $pos_len = scalar(@{$positions[$key]});
         my $j = 0;
         while( $j < $pos_len ) { #this loop makes it so you can put 246-Me-Ph instead of 2-4-6-Me-Ph
-            while( $positions{$key}[$j] > $#n ) {
-                my $p = $positions{$key}[$j];
-                $positions{$key}[$j] = $p % 10;              #grab the ones place 
-                my $np = ($p - $positions{$key}[$j])/10 - 1; #grab the tens place, take off 1 (0 indexing...)
+            while( $positions[$key]->[$j] > $#n ) {
+                my $p = $positions[$key]->[$j];
+                $positions[$key]->[$j] = $p % 10;              #grab the ones place 
+                my $np = ($p - $positions[$key]->[$j])/10 - 1; #grab the tens place, take off 1 (0 indexing...)
                 if( $np == -1 ) { die "Error while trying to build $self->{name}:\nEnd of register while parsing positions of $parts{$key}\n" }
                 # ^ this catches when the position is greater than the number of atoms on the base (e.g. 3-Me-Et)
                 # such an issue would cause an infinite loop without this die
-                push @{$positions{$key}}, $np;
+                push @{$positions[$key]}, $np;
                 $pos_len += 1; #we now have an aditional place to add this substituent
             }
             $j += 1;
         }
-        for my $at (@{$positions{$key}}) {
+        for my $at (@{$positions[$key]}) {
             my $H = $base->_give_me_an_H($n[$at]); #grab an H on the nth atom
             unless( $H ) { die "Error while trying to build $self->{name}:\nCould not find an H on atom $n[$at] of $basename\n"; }
             # ^ this catches when the atom on the base has no H's left (e.g. 2-2-CF3-Ph) 
-            $base->substitute( target => $H, sub => $parts{$key}, minimize_torsion => 1); 
+            $base->substitute( target => $H, sub => $parts{$key}, minimize_torsion => 0); 
         }
     }
 
@@ -2261,27 +2331,32 @@ sub build_sub {
 
 sub _replace_common_names {
     #replace some common names with what you'd pass build_sub to build the substituent
+    #could possibly include things like tBu and iPr in the future
     my $name = shift;
     #misc substituents
-    $name =~ s/^Bn$/1-Ph-Me/;                   #benzyl
-    $name =~ s/^MePh2/11-Ph-Me/;                #diphenylmethyl
-    $name =~ s/^MePh3/111-Ph-Me/;               #triphenylmethyl
-    $name =~ s/^EtF5$/1-CF3-11-F-Me/;           #pentafluoroethyl
-    $name =~ s/^sBu$/1-Et-Et/;                  #sec-butyl
-    $name =~ s/^iBu$/1-iPr-Me/;                 #iso-butyl
-    $name =~ s/^nBu$/1-{1-Et-Me}Me/;            #n-butyl
-    $name =~ s/^Pr$/1-Et-Me/;                   #n-propyl
+    $name =~ s/^Bn$/1-Ph-Me/;                           #benzyl
+    $name =~ s/^MePh2/11-Ph-Me/;                        #diphenylmethyl
+    $name =~ s/^MePh3/111-Ph-Me/;                       #triphenylmethyl
+    $name =~ s/^EtF5$/1-CF3-11-F-Me/;                   #pentafluoroethyl
+    $name =~ s/^sBu$/1-Et-Et/;                          #sec-butyl
+    $name =~ s/^iBu$/1-iPr-Me/;                         #iso-butyl
+    $name =~ s/^nBu$/1-{1-Et-Me}Me/;                    #n-butyl
+    $name =~ s/^Pr$/1-Et-Me/;                           #n-propyl
     #misc protecting groups
-    $name =~ s/^Boc$/2-tBu-COOH/;               #t-butyloxycarbonyl 
-    $name =~ s/^Cbz$/2-Bn-COOH/;                #carboxybenzyl
+    $name =~ s/^Boc$/2-tBu-COOH/;                       #t-butyloxycarbonyl 
+    $name =~ s/^CBz$/2-Bn-COOH/;                        #carboxybenzyl
+    $name =~ s/^PMB$/4-OMe-Bn/;                         #4-methoxybenzyl 
+    $name =~ s/^MOM$/1-OMe-Me/;                         #methoxymethyl 
     #OH protecting groups
-    $name =~ s/^PMB$/1-{4-OMe-Bn}OH/;           #4-methoxybenzyl ether
-    $name =~ s/^BOM$/2-{1-Bn-OH}OMe/;           #benzylmethyl acetal
-    $name =~ s/^MOM$/2-OMe-OMe/;                #methoxymethyl acetal
-    $name =~ s/^TBDPS$/1-{1-tBu-11-Ph-SiH3}OH/; #t-butyldiphenylsilyl
-    $name =~ s/^TBS$/1-{1-tBu-11-Me-SiH3}OH/;   #t-butyldimethylsilyl
-    $name =~ s/^TIPS$/1-{111-iPr-SiH3}OH/;      #triisopropylsilyl
-    $name =~ s/^TES$/1-{111-Et-SiH3}OH/;        #triethylsilyl
+    $name =~ s/^BOM$/1-{1-{1-Bn-OH}Me}OH/;              #benzyloxymethyl acetal
+    $name =~ s/^R-EE$/1-{1-Me-1-{1-Et-OH}Me}OH/;        #ethoxyethyl acetal
+    $name =~ s/^S-EE$/1-{1-{1-Et-OH}-1-Me-Me}OH/;       #ethoxyethyl acetal
+    $name =~ s/^TBDPS$/1-{1-tBu-11-Ph-SiH3}OH/;         #t-butyldiphenylsilyl ether
+    $name =~ s/^TBS$/1-{1-tBu-11-Me-SiH3}OH/;           #t-butyldimethylsilyl ether
+    $name =~ s/^TIPS$/1-{111-iPr-SiH3}OH/;              #triisopropylsilyl ether
+    $name =~ s/^TES$/1-{111-Et-SiH3}OH/;                #triethylsilyl ether 
+    $name =~ s/^Troc$/1-{2-{1-{111-Cl-Me}Me}-COOH}-OH/; #2,2,2-tricloroethyl carbonate
+    
     return $name;
 }
 
@@ -2379,12 +2454,17 @@ sub _give_me_an_H {
     my $at = shift;
     my $H; #atom number of an H on atom number at
     my $natoms = $#{$self->{elements}};
-    my $min_dist = -1; 
+    my $min_dot = -1; 
+    my $bondv = $self->get_point(0);
+    $bondv = $bondv / abs($bondv);
     for my $i (@{$self->{connection}->[$at]}) {
         if( ${$self->{elements}}[$i] eq 'H' ) {
-            my $distance = $self->distance(atom1 => $at, atom2 => $i); #find the closest H
-            if( $distance < $min_dist or $min_dist < 0) { 
-                $min_dist = $distance;
+            my $hv = $self->get_bond($i, $at);
+            $hv = $hv / abs($hv);
+            my $dot = $bondv * $hv; 
+            #find the H most parallel to origin-atom0 vector
+            if( $dot > $min_dot or $min_dot == -1) { 
+                $min_dot = $dot; 
                 $H = $i;
             }
         }
@@ -2429,7 +2509,8 @@ sub check_rot_sym {
     #checks to see if the substituent still has a certain degree of rotational symmetry
     #applies a C_n rotation and spins the rotatable bonds to see if the deviation between
     #the rotated structure and the original is small
-    #this doesn't work as well for flexible systems 
+    #this doesn't work as well for very flexible systems 
+    #replace this with align_on_subs as some point
     my $self = shift;
     my $order = shift; #n in C_n for the level of rotational symmetry we're expecting 
 
