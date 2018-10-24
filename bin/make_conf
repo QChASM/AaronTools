@@ -9,8 +9,6 @@ use Data::Dumper;
 use Math::Trig;
 use AaronTools::Geometry;
 use AaronTools::Catalysis;
-use Carp 'verbose';
-$SIG{ __DIE__ } = sub { Carp::confess( @_ ) };
 
 unshift @INC, ("$ENV{'QCHASM'}/AaronTools/bin");
 require _utils;
