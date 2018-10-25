@@ -113,15 +113,7 @@ sub main {
         $comment .= "-Cf$conf";
         my $tmp     = [];
 
-        # $outfile will be empty string if write to file not requested
-        my $outfile;
-        unless ( $opt{force} ) {
-            $outfile = _utils::handle_overwrite( $opt{output} );
-        } else {
-            $outfile = $opt{output};
-        }
-
-        # prints to STDOUT if $outfile == ''
+        my $outfile = _utils::get_outfile(_utils::strip_dir($file), $opt{output}, ["Cf$conf"]);
         _utils::mkdirsfor($outfile) if $outfile;
         print("Saving coords to $outfile\n") if $outfile;
         $geom->printXYZ( $outfile, $comment, 1 );
@@ -139,13 +131,13 @@ my %opt;
 my %sublist;
 $opt{help}   = '';
 $opt{subs}   = \%sublist;
-$opt{output} = '';
+$opt{output} = '-';
 GetOptions( 'help|h'       => \$opt{help},
             'available|a'  => \$opt{available},
             'sub|s=s%{1,}' => \%sublist,
             'conformer|c=s'=> \$opt{conformers},
             'minimize|m'   => \$opt{minimize_torsion},
-            'output|o=s'   => \$opt{output},
+            'write|w:s'   => \$opt{output},
             'force|f'    => \$opt{force} )
   or pod2usage(
     { -exitval => 1,
@@ -200,9 +192,9 @@ Location of substituent (1-indexed) and requested substituent using key=value no
 
 Apply substituent rotations to generate the nth conformer of the input molecule
 
-=item B<-o outfile [f]>, B<--output outfile [--force]>
+=item B<-w [directory]>, B<--write [directory]>
 
-Save the new geometry to <outfile>. Optionally, force overwrite if <outfile> already exists.
+Saves files instead of print to STDOUT. Will be saved to <directory>, if provided (defauls to current working directory).
 
 =item B<-h>, B<--help>
 
