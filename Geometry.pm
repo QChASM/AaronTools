@@ -1540,6 +1540,9 @@ sub align_on_subs {
     #as close as possible to $ref_geom's structure
     my $self = shift;
     my $ref_geom = shift;
+    my $rotate_base = shift;
+
+    $rotate_base //= 1;
 
     my $threshold = 1E-4;
     my $increment = 5;
@@ -1548,7 +1551,7 @@ sub align_on_subs {
 
     while ($delta_dev > $threshold) { #keep trying to do better as long as we're making good improvements
         $delta_dev = $min_dev;
-        if( 1 ) {
+        if( $rotate_base ) {
             my $angle = $increment;
             my $bond_axis = $self->get_point(0);
             my $point = $self->get_point(0);
@@ -1586,6 +1589,7 @@ sub align_on_subs {
             }
             #rotate the thing to be in the orientation that's more similar to ref_geom
             $self->center_genrotate( $point, $bond_axis, deg2rad($min_angle), $fragment ); 
+            my $sd = $self->_sym_SD($ref_geom);
         }
         $delta_dev -= $min_dev;
     }
@@ -2194,6 +2198,8 @@ sub new {
 
         if (-f "$QCHASM/AaronTools/Subs/$self->{name}.xyz") {
             $self->read_geometry("$QCHASM/AaronTools/Subs/$self->{name}.xyz");
+        } elsif (-f "$ENV{HOME}/Aaron_libs/Subs/$self->{name}.xyz") {
+            $self->read_geometry("$ENV{HOME}/Aaron_libs/Subs/$self->{name}.xyz");
         } elsif ( $self->{name} ) {
             #if we don't have the substituent in the library, we can try to build it
             $self->{name} = &_replace_common_names( $self->{name} );
@@ -2355,7 +2361,7 @@ sub _replace_common_names {
     $name =~ s/^TBS$/1-{1-tBu-11-Me-SiH3}OH/;           #t-butyldimethylsilyl ether
     $name =~ s/^TIPS$/1-{111-iPr-SiH3}OH/;              #triisopropylsilyl ether
     $name =~ s/^TES$/1-{111-Et-SiH3}OH/;                #triethylsilyl ether 
-    $name =~ s/^Troc$/1-{2-{1-{111-Cl-Me}Me}-COOH}-OH/; #2,2,2-tricloroethyl carbonate
+    $name =~ s/^Troc$/1-{2-{1-{111-Cl-Me}Me}-COOH}-OH/; #2,2,2-trichloroethyl carbonate
     
     return $name;
 }
@@ -2509,8 +2515,6 @@ sub check_rot_sym {
     #checks to see if the substituent still has a certain degree of rotational symmetry
     #applies a C_n rotation and spins the rotatable bonds to see if the deviation between
     #the rotated structure and the original is small
-    #this doesn't work as well for very flexible systems 
-    #replace this with align_on_subs as some point
     my $self = shift;
     my $order = shift; #n in C_n for the level of rotational symmetry we're expecting 
 
@@ -2519,28 +2523,9 @@ sub check_rot_sym {
     my $ref_geom = $self->copy; #make a copy 
     my $axis = $self->get_point(0);
     my $sub_atoms = [(0..$#{$self->{elements}})];
-    $self->center_genrotate($axis, $axis, deg2rad(360/$order), $sub_atoms); #apply the C_n operation 
+    $ref_geom->center_genrotate($axis, $axis, deg2rad(360/$order), $sub_atoms); #apply the C_n operation 
     
-    for my $bond (@{$self->{rotatable_bonds}}) {                            #go through each bond
-        my $fragment = $self->get_all_connected( $bond->[1], $bond->[0] );  #grab the atoms of the substituent 
-        my $angle = $increment;
-        my $bond_axis = $self->get_bond( $bond->[0], $bond->[1] );
-        my $point = $self->get_point( $bond->[1] );
-        my $min_dev = $self->_sym_SD($ref_geom);
-        my $min_angle = 0;
-
-        while ($angle <= 360 ) {                                            #rotate many times
-            $self->center_genrotate( $point, $bond_axis, deg2rad($increment), $fragment );
-            my $sd = $self->_sym_SD($ref_geom);
-            if( $sd < $min_dev ) {
-                $min_dev = $sd;                                             #store the rotation that minimizes the deviation
-                $min_angle = $angle;
-            }
-            $angle += $increment;
-        }
-        #rotate the thing to be in the more symmetric orientation
-        $self->center_genrotate( $point, $bond_axis, deg2rad($min_angle), $fragment ); 
-    }
+    $self->align_on_subs($ref_geom, 0);
 
     my $SD = $self->_sym_SD($ref_geom);
     if( $SD < $threshold ) { #after we've checked all the bonds, see if the deviation is below the threshold

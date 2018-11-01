@@ -92,6 +92,10 @@ sub main {
         }
     }
 
+    unless( $opt{conformers} ) {
+        $opt{conformers} = join(',', (1..$cfs));
+    }
+
     #make each conformer
     for my $conf (split /,/, $opt{conformers}) {
         for my $j (0..$#{$geom->{rotations}}) {
@@ -156,12 +160,6 @@ pod2usage(
        -exitval => 1,
        -verbose => 1
     } ) if ( keys(%sublist) < 1 );
-pod2usage(
-    { -message =>
-        "You must request at least one conformer",
-      -exitval => 1,
-      -verbose => 1
-    } ) if ( not exists $opt{conformers} );
 pod2usage(
     { -message => "Please provide a geometry file",
       -exitval => 1,
