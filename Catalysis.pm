@@ -570,8 +570,8 @@ sub _map_center {
 
         unless ($noC1 && $noC2) {
             #try mapping multiple times
-            my $E_min = 1E20;
-            my $ligand_min;
+            my $E_min = $self->LJ_energy($self->ligand());
+            my $ligand_min = $ligand->copy();
             my $active_center = shift @$ref1;
             for my $i (0..$#{$ref1}) {
                 my @ref1_temp = @$ref1[$i..$#{$ref1}];
@@ -791,10 +791,10 @@ sub minimize_rotation {
 
     my $increment = 5;
 
-    my $E_min = 1E20;
+    my $E_min = $self->LJ_energy($object);
     my $angle_min = 0;
 
-    foreach my $count (0..360/$increment + 1) {
+    foreach my $count (1..360/$increment) {
         my $angle = $count*$increment;
         $object->center_genrotate($point, $axis, deg2rad($increment));
         my $energy = $self->LJ_energy($object);
@@ -826,16 +826,19 @@ sub minimize_sub_torsions {
 #point is a ->point return
 #v is a vector of the axis
 sub minimize_sub_torsion {
+    #rotates all the rotatable bonds associated with the target substituent on 
+    #one object of a catalysis object to minimize the LJ potential
     my $self = shift;
     my %param = @_;
     my ($object, $target) = ($param{object}, $param{target});
 
-    my $increment = 15;
+    my $increment = 7.5; #angle increment in degrees
 
-    my $E_min = 1E20;
+    my $E_min = $self->part_LJ_energy($object->{substituents}->{$target});
     my $angle_min = 0;
 
-    foreach my $count (0..360/$increment + 1) {
+    #this part rotates the entire substituent together
+    foreach my $count (1..360/$increment) {
         my $angle = $count*$increment;
         $object->sub_rotate( target => $target,
                               angle => $increment );
@@ -845,8 +848,29 @@ sub minimize_sub_torsion {
           $E_min = $energy;
         }
     }
-
+    
+    #apply the best rotation
     $object->sub_rotate( target => $target, angle => $angle_min);
+
+    $E_min = $self->part_LJ_energy($object->{substituents}->{$target});
+
+    #this part rotates about all of the rotatable bonds this substituent has
+    for my $bond (1..$#{$object->{substituents}->{$target}->{rotatable_bonds}}) {
+        $E_min = $self->part_LJ_energy($object->{substituents}->{$target});
+        $angle_min = 0;
+        foreach my $count (1..360/$increment) {
+            my $angle = $count*$increment;
+            $object->sub_rotate( target => $target, angle => $increment, bond => $bond );
+            my $energy = $self->part_LJ_energy($object->{substituents}->{$target});
+            if( $energy < $E_min ) {
+                $angle_min = $angle;
+                $E_min = $energy;
+            }
+        }
+        #apply the best rotation for each rotatable part of the substituent
+        $object->sub_rotate( target => $target, angle => $angle_min, bond => $bond );
+    }
+
 }
 
 
@@ -1730,16 +1754,14 @@ sub _replace_all {
 }
 
 
-#rotate one part of the catalysis to minimize the RMSD of the whole system
-#point is a ->point return
-#v is a vector of the axis
+#rotate one part of the catalysis to minimize the LJ potential of the whole system
 sub minimize_sub_torsion {
     my $self = shift;
     my ($target) = @_;
 
     my $increment = 5;
 
-    my $E_min = 1E20;
+    my $E_min = $self->part_LJ_energy($self->{substituents}->{$target});
     my $angle_min = 0;
 
     foreach my $count (0..360/$increment + 1) {
@@ -1747,9 +1769,9 @@ sub minimize_sub_torsion {
         $self->sub_rotate( target => $target,
                             angle => $increment );
         my $energy = $self->part_LJ_energy($self->{substituents}->{$target});
-        if($energy < $E_min) {
-          $angle_min = $angle;
-          $E_min = $energy;
+         if($energy < $E_min) {
+            $angle_min = $angle;
+            $E_min = $energy;
         }
     }
 

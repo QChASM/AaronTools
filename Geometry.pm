@@ -1108,38 +1108,48 @@ sub minimize_torsion {
     my %param = @_;
     my ($atom1, $atom2) = ( $param{start_atom}, $param{end_atom} );
 
+    #get all atoms on this part of the molecule
     my $targets = $self->get_all_connected($atom1, $atom2);
 
     my $increment = 5; #angle increment to search over
 
+    #make a list of rotatable bonds
     my @bonds = [($atom2, $atom1)];
     if( $self->{rotatable_bonds} ) {
         for my $bond ( @{$self->{rotatable_bonds}} ) {
+            #avoid doubling up on the requested bond
             if( $bond->[0] != $bonds[0]->[0] and $bond->[1] != $bonds[0]->[1] ) {
                 push @bonds, $bond;
             }
         }
     }
+    
     for my $bond (@bonds) {
         my $a1 = $bond->[0];
         my $a2 = $bond->[1];
-        if( grep( /^$a2$/, @{$targets} ) ) {
+        #if an atom in this bond is on this part of the molecule, then we'll try to 
+        #optimize that bond's torsional angle
+        if( grep( /^$a2$/, @{$targets} ) ) { 
+            #get all atoms that are on one end of this bond
             my $fragment = $self->get_all_connected($a2, $a1);
-            if( $fragment ) { 
-                my $E_min = -1;
-                my $angle_min = 0;
+            if( $fragment ) { #there might be nothing e.g. if substitute is used to put on a F -
+                              #it still puts a rotatable_bond for it, but there's no fragment 
+                              #attached to the F
+                my $E_min =$self->LJ_energy();
+                my $angle_min = 0; #we'll be storing the best angle
                 my $point = $self->get_point($a2);
                 my $axis = $self->get_bond($a2, $a1);
 
-                foreach my $count (0..360/$increment + 1) {
+                foreach my $count (1..360/$increment) {
                     my $angle = $count*$increment;
                     $self->center_genrotate($point, $axis, deg2rad($increment), $fragment);
                     my $energy = $self->LJ_energy();
-                    if($energy < $E_min or $E_min == -1) {
-                      $angle_min = $angle;
-                      $E_min = $energy;
+                    if( $energy < $E_min ) {
+                        $angle_min = $angle;
+                        $E_min = $energy;
                     }
                 }
+                #apply the best rotation
                 $self->center_genrotate($point, $axis, deg2rad($angle_min), $fragment);
             }
         }
@@ -2549,6 +2559,9 @@ sub copy {
     $new->{sub} = $self->{sub};
     $new->{conformer_num} = $self->{conformer_num};
     $new->{conformer_angle} = $self->{conformer_angle};
+    $new->{conformers} = $self->{conformers};
+    $new->{rotations} = $self->{rotations};
+    $new->{rotatable_bonds} = $self->{rotatable_bonds};
     return $new;
 };
 
