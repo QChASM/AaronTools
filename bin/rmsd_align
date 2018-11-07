@@ -143,8 +143,9 @@ Only align heavy atoms.
 =item B<-r=atomlist>, B<--ref_atoms=atomlist>
 
 List of atoms in reference geometry to align to (1-indexed).
-atomlist should be comma-separated and ranges are allowed,
-eg: -r=1,2,3-7
+atomlist should be comma-separated and ranges are allowed, eg:
+
+  -r=1,2,3-7
 
 =item B<-t=atomlist>, B<--to_align_atoms=atomlist>
 
@@ -159,6 +160,9 @@ Use only for small systems, large systems should use the atom list method, above
 =item B<-p>, B<--print>
 
 Only prints the RMSD between the target and reference files, instead of aligning to the reference structure as well.
+Prints in comma-separated value form:
+
+  reference_geom, to_align_geom, 0.234
 
 =item B<-o FILENAME [-f]>, B<--output FILENAME [--force]>
 

@@ -826,7 +826,7 @@ sub minimize_sub_torsions {
 #point is a ->point return
 #v is a vector of the axis
 sub minimize_sub_torsion {
-    #rotates all the rotatable bonds associated with the target substituent on 
+    #rotates all the rotatable bonds associated with the target substituent on
     #one object of a catalysis object to minimize the LJ potential
     my $self = shift;
     my %param = @_;
@@ -848,7 +848,7 @@ sub minimize_sub_torsion {
           $E_min = $energy;
         }
     }
-    
+
     #apply the best rotation
     $object->sub_rotate( target => $target, angle => $angle_min);
 
@@ -960,8 +960,8 @@ sub make_conformer {
     $new_array //= $self->conf_array(number => $number);
     $old_array //= $self->conf_array(number => $current_number);
 
-    my $num_l = keys $self->ligand->{substituents};
-    my $num_s = keys $self->substrate->{substituents};
+    my $num_l = keys %{$self->ligand->{substituents}};
+    my $num_s = keys %{$self->substrate->{substituents}};
 
     if ($num_l > 0) {
         $self->ligand()->make_conformer( current => [@$old_array[0..$num_l]],
@@ -1337,15 +1337,15 @@ sub sub_rotate {
         my $point;
         my $axis;
         my $fragment;
-        if( $bond_index == 0 ) { 
+        if( $bond_index == 0 ) {
         #the first bond will usually be [$sub->{end}, 0] where 0 is the index of the substituent atom
             $point = $self->get_point($sub->{end});
             $axis = $self->get_bond($sub->{end}, $target);
-            $fragment = [(0..$#{$sub->{elements}})]; #get everything 
+            $fragment = [(0..$#{$sub->{elements}})]; #get everything
         } else {
         #other bonds will be just substituent indexing
             $point = $sub->get_point($atom1);
-            $axis = $sub->get_bond($atom1, $atom2); 
+            $axis = $sub->get_bond($atom1, $atom2);
             $fragment = $sub->get_all_connected( $atom2, $atom1 ); #get everything connected to this bond
         }
         $sub->center_genrotate( $point, $axis, deg2rad($angle), $fragment ); #apply rotation
@@ -1558,14 +1558,14 @@ sub make_conformer {
             }
         }
         for my $j (0..$#{$self->{substituents}->{$targets[$i]}->{rotations}}) {
-            my $rotations = int( ($new_array->[$i]-1)/$mod_array[$j] ) % 
+            my $rotations = int( ($new_array->[$i]-1)/$mod_array[$j] ) %
                                 $self->{substituents}->{$targets[$i]}->{conformers}->[$j];
             $rotations -= int( ($old_array->[$i]-1)/$mod_array[$j] ) %
                                 $self->{substituents}->{$targets[$i]}->{conformers}->[$j];
             #rotations counts up from old_array as if the nth number is of base sub->{conformers}->[$j]
             #i.e, if conformers are (3 2), rotations[j] will be (0 0) (0 1) (1 0) (1 1) (2 0) (2 1) for the respective Cf
             my $angle = $self->{substituents}->{$targets[$i]}->{rotations}->[$j] * $rotations;
-            if( $angle != 0 ) { #don't waste time rotating by 0 degrees 
+            if( $angle != 0 ) { #don't waste time rotating by 0 degrees
                 $self->sub_rotate( target => $targets[$i], angle => $angle , bond => $j );
             }
             $self->{substituents}->{$targets[$i]}->{flags} = [(0) x
