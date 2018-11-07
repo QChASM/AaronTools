@@ -7,7 +7,7 @@ use AaronTools::Constants qw(CUTOFF NAMES);
 use AaronTools::Atoms qw (:BASIC :LJ);
 
 my $QCHASM = $ENV{'QCHASM'};
-$QCHASM =~ s|/\z||;	#Strip trailing / from $QCHASM if it exists
+$QCHASM =~ s|/\z||;    #Strip trailing / from $QCHASM if it exists
 my $mass = MASS;
 my $CUTOFF = CUTOFF;
 my $TMETAL = TMETAL;
@@ -46,12 +46,12 @@ sub new {
             #ligand backbone and sub
             $self->detect_component();
 
-			my @keyatoms = map { @$_ } @{ $self->{ligand_keyatoms} };
-			for my $k ( keys %{ $substituents->{ligand} } ){
-				if ( grep { $k == $_ } @keyatoms ){
-					die "Cannot assign substituents to key atoms";
-				}
-			}
+            my @keyatoms = map { @$_ } @{ $self->{ligand_keyatoms} };
+            for my $k ( keys %{ $substituents->{ligand} } ){
+                if ( grep { $k == $_ } @keyatoms ){
+                    die "Cannot assign substituents to key atoms";
+                }
+            }
             $self->ligand()->set_substituents($substituents->{ligand});
             $self->ligand()->detect_backbone_subs( no_new_subs => $params{no_new_subs} );
             #substrate subs
@@ -83,7 +83,7 @@ sub detect_component {
     my $self = shift;
 
     my $TM;
-	#Need to modify to account for TM in the ligand itself!
+    #Need to modify to account for TM in the ligand itself!
     for my $atomi (0..$#{ $self->{elements} }) {
         if (exists $TMETAL->{$self->{elements}->[$atomi]}) {
             $TM = $atomi;
@@ -230,11 +230,9 @@ sub detect_component {
 
 
 #This function is opposite to the@split above, it is used to combine the
-
 #ligand, metal and substrate
 sub rebuild {
     my $self = shift;
-
 
     $self->rebuild_coords();
 
@@ -572,8 +570,8 @@ sub _map_center {
 
         unless ($noC1 && $noC2) {
             #try mapping multiple times
-            my $E_min = 1E20;
-            my $ligand_min;
+            my $E_min = $self->LJ_energy($self->ligand());
+            my $ligand_min = $ligand->copy();
             my $active_center = shift @$ref1;
             for my $i (0..$#{$ref1}) {
                 my @ref1_temp = @$ref1[$i..$#{$ref1}];
@@ -644,13 +642,13 @@ sub screen_subs {
     if ($component eq $LIGAND) { $object = $self->ligand() };
     if ($component eq $SUBSTRATE) { $object = $self->substrate() };
 
-	# ligand can take named substitutions, substrate cannot
-	my @subs;
-	if ( $component eq $LIGAND ) {
-		@subs = keys %params;
-	} else {
-		@subs = grep { $_ =~ /(\d+,?)+/ } keys %params;
-	}
+    # ligand can take named substitutions, substrate cannot
+    my @subs;
+    if ( $component eq $LIGAND ) {
+        @subs = keys %params;
+    } else {
+        @subs = grep { $_ =~ /(\d+,?)+/ } keys %params;
+    }
 
     my @subs_final = ({});
     for my $key (@subs) {
@@ -704,15 +702,15 @@ sub substitute {
     my @inexplicit_subs = grep { $_ !~ /^\d+$/ } keys %substituents;
     my @explicit_subs = grep { $_ =~ /^\d+$/ } keys %substituents;
 
-	# fail if substitution requested for key atoms
-	if ( $component eq $LIGAND ){
-		my @keyatoms = map { @$_ } @{ $self->{ligand_keyatoms} };
-		for my $k ( @keyatoms ){
-			if ( grep { $_ == $k } @explicit_subs ){
-				die "Cannot substitute key atoms\n"
-			}
-		}
-	}
+    # fail if substitution requested for key atoms
+    if ( $component eq $LIGAND ){
+        my @keyatoms = map { @$_ } @{ $self->{ligand_keyatoms} };
+        for my $k ( @keyatoms ){
+            if ( grep { $_ == $k } @explicit_subs ){
+                die "Cannot substitute key atoms\n"
+            }
+        }
+    }
     for my $inexplicit_sub (@inexplicit_subs) {
         my @subs = grep { $object->{substituents}->{$_}->{name} eq $inexplicit_sub }
                         keys %{ $object->{substituents} };
@@ -793,10 +791,10 @@ sub minimize_rotation {
 
     my $increment = 5;
 
-    my $E_min = 1E20;
+    my $E_min = $self->LJ_energy($object);
     my $angle_min = 0;
 
-    foreach my $count (0..360/$increment + 1) {
+    foreach my $count (1..360/$increment) {
         my $angle = $count*$increment;
         $object->center_genrotate($point, $axis, deg2rad($increment));
         my $energy = $self->LJ_energy($object);
@@ -828,16 +826,19 @@ sub minimize_sub_torsions {
 #point is a ->point return
 #v is a vector of the axis
 sub minimize_sub_torsion {
+    #rotates all the rotatable bonds associated with the target substituent on 
+    #one object of a catalysis object to minimize the LJ potential
     my $self = shift;
     my %param = @_;
     my ($object, $target) = ($param{object}, $param{target});
 
-    my $increment = 15;
+    my $increment = 7.5; #angle increment in degrees
 
-    my $E_min = 1E20;
+    my $E_min = $self->part_LJ_energy($object->{substituents}->{$target});
     my $angle_min = 0;
 
-    foreach my $count (0..360/$increment + 1) {
+    #this part rotates the entire substituent together
+    foreach my $count (1..360/$increment) {
         my $angle = $count*$increment;
         $object->sub_rotate( target => $target,
                               angle => $increment );
@@ -847,8 +848,29 @@ sub minimize_sub_torsion {
           $E_min = $energy;
         }
     }
-
+    
+    #apply the best rotation
     $object->sub_rotate( target => $target, angle => $angle_min);
+
+    $E_min = $self->part_LJ_energy($object->{substituents}->{$target});
+
+    #this part rotates about all of the rotatable bonds this substituent has
+    for my $bond (1..$#{$object->{substituents}->{$target}->{rotatable_bonds}}) {
+        $E_min = $self->part_LJ_energy($object->{substituents}->{$target});
+        $angle_min = 0;
+        foreach my $count (1..360/$increment) {
+            my $angle = $count*$increment;
+            $object->sub_rotate( target => $target, angle => $increment, bond => $bond );
+            my $energy = $self->part_LJ_energy($object->{substituents}->{$target});
+            if( $energy < $E_min ) {
+                $angle_min = $angle;
+                $E_min = $energy;
+            }
+        }
+        #apply the best rotation for each rotatable part of the substituent
+        $object->sub_rotate( target => $target, angle => $angle_min, bond => $bond );
+    }
+
 }
 
 
@@ -901,11 +923,15 @@ sub number_of_conformers {
     my $cf_number_ligand = 1;
 
     for my $sub (keys %{ $self->substrate()->{substituents} }) {
-        $cf_number_substrate *= $self->substrate()->{substituents}->{$sub}->{conformer_num};
+        for my $confs (@{$self->substrate()->{substituents}->{$sub}->{conformers}}) {
+            $cf_number_substrate *= $confs;
+        }
     }
 
     for my $sub (keys %{ $self->ligand()->{substituents} }) {
-        $cf_number_ligand *= $self->ligand()->{substituents}->{$sub}->{conformer_num};
+        for my $confs (@{$self->ligand()->{substituents}->{$sub}->{conformers}}) {
+            $cf_number_ligand *= $confs;
+        }
     }
 
     if ($object eq $SUBSTRATE) {
@@ -917,7 +943,6 @@ sub number_of_conformers {
         return $total;
     }
 }
-
 
 #FIXME make conformer for the whole geometry
 #not only ligand or substratwe
@@ -935,16 +960,16 @@ sub make_conformer {
     $new_array //= $self->conf_array(number => $number);
     $old_array //= $self->conf_array(number => $current_number);
 
-    my $num_l = keys %{ $self->ligand()->{substituents} };
-    my $num_s = keys %{ $self->substrate()->{substituents} };
+    my $num_l = keys $self->ligand->{substituents};
+    my $num_s = keys $self->substrate->{substituents};
 
     if ($num_l > 0) {
-        $self->ligand()->make_conformer( current => [@$old_array[0..$num_l - 1]],
-                                                new => [@$new_array[0..$num_l - 1]] );
+        $self->ligand()->make_conformer( current => [@$old_array[0..$num_l]],
+                                                new => [@$new_array[0..$num_l]] );
     }
     if ($num_s > 0) {
-        $self->substrate()->make_conformer( current => [@$old_array[$num_l..$num_l + $num_s - 1]],
-                                             new => [@$new_array[$num_l..$num_l + $num_s - 1]] );
+        $self->substrate()->make_conformer( current => [@$old_array[$num_l..$num_l + $num_s]],
+                                             new => [@$new_array[$num_l..$num_l + $num_s]] );
     }
     $self->rebuild();
     $self->{conf_num} = $number;
@@ -1003,12 +1028,20 @@ sub _conf_max_array {
 
     for my $target (sort { $a <=> $b } keys %{ $self->ligand()->{substituents} }) {
         #NOTE reverse order here
-        push(@conf_max_array, $self->ligand()->{substituents}->{$target}->{conformer_num});
+        my $confs = 1;
+        for my $cf (@{$self->ligand->{substituents}->{$target}->{conformers}}) {
+            $confs *= $cf; #maximum conformers is the product of the conformers of each sub
+        }
+        push(@conf_max_array, $confs);
     }
 
     for my $target (sort { $a <=> $b } keys %{ $self->substrate()->{substituents} }) {
         #NOTE reverse order here
-        push(@conf_max_array, $self->substrate()->{substituents}->{$target}->{conformer_num});
+    my $confs = 1;
+        for my $cf (@{$self->substrate->{substituents}->{$target}->{conformers}}) {
+        $confs *= $cf;
+    }
+    push(@conf_max_array, $confs);
     }
 
     return [@conf_max_array];
@@ -1025,9 +1058,15 @@ sub max_conf_number {
     my @ligand_subs = sort { $a <=> $b } keys %{ $self->ligand()->{substituents} };
 
     if ($sub <= $#ligand_subs) {
-        $max = $self->ligand()->{substituents}->{$ligand_subs[$sub]}->{conformer_num};
-    }else {
-        $max = $self->substrate()->{substituents}->{$substrate_subs[$sub-$#ligand_subs-1]}->{conformer_num};
+        $max = 1;
+        for my $cf (@{$self->ligand()->{substituents}->{$ligand_subs[$sub]}->{conformers}}) {
+            $max *= $cf;
+        }
+    } else {
+        $max = 1;
+        for my $cf (@{$self->substrate()->{substituents}->{$substrate_subs[$sub-$#ligand_subs-1]}->{conformers}}) {
+            $max *= $cf;
+        }
     }
 
     return $max;
@@ -1288,14 +1327,34 @@ sub sub_rotate {
 
     my %params = @_;
 
-    my ($target, $angle) = ( $params{target}, $params{angle} );
+    my ($target, $angle, $bond_index) = ( $params{target}, $params{angle} , $params{bond});
 
     my $sub = $self->{substituents}->{$target};
 
-    my $point = $self->get_point($sub->{end});
-    my $axis = $self->get_bond($sub->{end}, $target);
+    if( exists $params{bond} ) { #rotate just one bond in the substituent
+        my $atom1 = $sub->{rotatable_bonds}->[$bond_index]->[0];
+        my $atom2 = $sub->{rotatable_bonds}->[$bond_index]->[1];
+        my $point;
+        my $axis;
+        my $fragment;
+        if( $bond_index == 0 ) { 
+        #the first bond will usually be [$sub->{end}, 0] where 0 is the index of the substituent atom
+            $point = $self->get_point($sub->{end});
+            $axis = $self->get_bond($sub->{end}, $target);
+            $fragment = [(0..$#{$sub->{elements}})]; #get everything 
+        } else {
+        #other bonds will be just substituent indexing
+            $point = $sub->get_point($atom1);
+            $axis = $sub->get_bond($atom1, $atom2); 
+            $fragment = $sub->get_all_connected( $atom2, $atom1 ); #get everything connected to this bond
+        }
+        $sub->center_genrotate( $point, $axis, deg2rad($angle), $fragment ); #apply rotation
+    } else {
+        my $point = $self->get_point($sub->{end});
+        my $axis = $self->get_bond($sub->{end}, $target);
 
-    $sub->center_genrotate($point, $axis, deg2rad($angle));
+        $sub->center_genrotate($point, $axis, deg2rad($angle));
+    }
 }
 
 
@@ -1370,7 +1429,7 @@ sub update_geometry {
 
     my $head = $#{ $self->{backbone}->{coords} } + 1;
     for my $target (sort {$a <=> $b} keys %{ $self->{substituents} }) {
-        my $coords = [$self->{coords}->[$target],
+    my $coords = [$self->{coords}->[$target],
                       @{ $self->{coords} }[$head..$head +
                         $#{ $self->{substituents}->{$target}->{elements} } - 1]];
         $self->{substituents}->{$target}->{coords} = $coords;
@@ -1432,9 +1491,14 @@ sub replace_substituent {
 
     $new_sub->{end} = $self->{substituents}->{$target}->{end};
 
+    #keep track of new bonds
+    my @new_bond = ($new_sub->{end}, $target);
+    unshift @{$new_sub->{rotatable_bonds}}, \@new_bond;
+
     $new_sub->{flags} = [ map { 0 } @{ $new_sub->{flags} } ];
 
     $self->{substituents}->{$target} = $new_sub;
+
 }
 
 sub _rearrange_active_con {
@@ -1452,18 +1516,18 @@ sub _rearrange_active_con {
         }
     }
 
-	if ($self->{substituents}) {
-		for my $key (sort {$a <=> $b} keys %{ $self->{substituents} }) {
-			if (exists $old_new->{$self->{substituents}->{$key}->{end}} ){
-				$self->{substituents}->{$key}->{end} = $old_new->{$self->{substituents}->{$key}->{end}};
-			}
-			if (exists $old_new->{$key} &&
-				($old_new->{$key} != $key)) {
-				$self->{substituents}->{$old_new->{$key}} = $self->{substituents}->{$key};
-				delete $self->{substituents}->{$key};
-			}
-		}
-	}
+    if ($self->{substituents}) {
+        for my $key (sort {$a <=> $b} keys %{ $self->{substituents} }) {
+            if (exists $old_new->{$self->{substituents}->{$key}->{end}} ){
+                $self->{substituents}->{$key}->{end} = $old_new->{$self->{substituents}->{$key}->{end}};
+            }
+            if (exists $old_new->{$key} &&
+                ($old_new->{$key} != $key)) {
+                $self->{substituents}->{$old_new->{$key}} = $self->{substituents}->{$key};
+                delete $self->{substituents}->{$key};
+            }
+        }
+    }
 
     if ($self->{active_centers}) {
         for my $i (0..$#{ $self->{active_centers} }) {
@@ -1484,11 +1548,29 @@ sub make_conformer {
     my @targets = sort { $a <=> $b } keys %{ $self->{substituents} };
 
     for my $i (0..$#targets) {
-        my $angle = $self->{substituents}->{$targets[$i]}->{conformer_angle} *
-                    ( $new_array->[$i] - $old_array->[$i] );
-        $self->sub_rotate( target => $targets[$i], angle => $angle );
-        $self->{substituents}->{$targets[$i]}->{flags} = [(0) x
-            scalar @{ $self->{substituents}->{$targets[$i]}->{flags} }];
+        my @mod_array;
+        for my $j (0..$#{$self->{substituents}->{$targets[$i]}->{rotations}}) {
+            $mod_array[$j] = 1;
+            for my $k ($j+1..$#{$self->{substituents}->{$targets[$i]}->{rotations}}) {
+            #mod_array is needed to determine when we increment a certain bond rotation in a flexible substituent
+            #if sub->{conformers} is (3 2 2), we only want to increment the 0th bond every 4 conformers
+                $mod_array[$j] *= $self->{substituents}->{$targets[$i]}->{conformers}->[$k];
+            }
+        }
+        for my $j (0..$#{$self->{substituents}->{$targets[$i]}->{rotations}}) {
+            my $rotations = int( ($new_array->[$i]-1)/$mod_array[$j] ) % 
+                                $self->{substituents}->{$targets[$i]}->{conformers}->[$j];
+            $rotations -= int( ($old_array->[$i]-1)/$mod_array[$j] ) %
+                                $self->{substituents}->{$targets[$i]}->{conformers}->[$j];
+            #rotations counts up from old_array as if the nth number is of base sub->{conformers}->[$j]
+            #i.e, if conformers are (3 2), rotations[j] will be (0 0) (0 1) (1 0) (1 1) (2 0) (2 1) for the respective Cf
+            my $angle = $self->{substituents}->{$targets[$i]}->{rotations}->[$j] * $rotations;
+            if( $angle != 0 ) { #don't waste time rotating by 0 degrees 
+                $self->sub_rotate( target => $targets[$i], angle => $angle , bond => $j );
+            }
+            $self->{substituents}->{$targets[$i]}->{flags} = [(0) x
+                scalar @{ $self->{substituents}->{$targets[$i]}->{flags} }];
+        }
     }
 }
 
@@ -1672,16 +1754,14 @@ sub _replace_all {
 }
 
 
-#rotate one part of the catalysis to minimize the RMSD of the whole system
-#point is a ->point return
-#v is a vector of the axis
+#rotate one part of the catalysis to minimize the LJ potential of the whole system
 sub minimize_sub_torsion {
     my $self = shift;
     my ($target) = @_;
 
     my $increment = 5;
 
-    my $E_min = 1E20;
+    my $E_min = $self->part_LJ_energy($self->{substituents}->{$target});
     my $angle_min = 0;
 
     foreach my $count (0..360/$increment + 1) {
@@ -1689,9 +1769,9 @@ sub minimize_sub_torsion {
         $self->sub_rotate( target => $target,
                             angle => $increment );
         my $energy = $self->part_LJ_energy($self->{substituents}->{$target});
-        if($energy < $E_min) {
-          $angle_min = $angle;
-          $E_min = $energy;
+         if($energy < $E_min) {
+            $angle_min = $angle;
+            $E_min = $energy;
         }
     }
 
