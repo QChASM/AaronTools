@@ -32,9 +32,23 @@ push @args,
     out     => '01/test_animate.xyz',
     ref     => '01/ref_animate.xyz' };
 push @args,
+  { args    => '01/trial.log -a -m 1',
+    message => 'Animate and select imaginary mode',
+    out     => '01/test_animate_1.xyz',
+    ref     => '01/ref_animate.xyz' };
+push @args,
+  { args    => '01/trial.log -a -m 189',
+    message => 'Animate and select another mode',
+    out     => '01/test_animate_189.xyz',
+    ref     => '01/ref_animate_189.xyz' };
+push @args,
+  { args    => '01/trial.log -l',
+    message => 'List frequencies (with index for selection)',
+    ref     => '01/ref_list.out' };
+push @args,
   { args    => '02/trial.log',
     message => 'Bad log file',
-    ref     => '02/ref.out',
+    ref     => '02/ref_fail.out',
     out     => 'stderr.tmp' };
 
 foreach my $a (@args) {

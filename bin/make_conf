@@ -1,0 +1,204 @@
+#!/usr/bin/perl -w
+
+use strict;
+use lib $ENV{'QCHASM'};
+
+use Getopt::Long;
+use Pod::Usage;
+use Data::Dumper;
+use Math::Trig;
+use AaronTools::Geometry;
+use AaronTools::Catalysis;
+
+unshift @INC, ("$ENV{'QCHASM'}/AaronTools/bin");
+require _utils;
+
+sub main {
+    my $file = shift;
+    my %opt  = @_;
+    my %subs;
+
+    my $geom = _utils::get_geom($file);
+    return 1 unless $geom;
+
+    foreach my $target ( keys %{ $opt{subs} } ) {
+        foreach my $k ( split /,/, $target ) {
+            $subs{$k} = $opt{subs}{$target};
+        }
+    }
+
+    my @targets = keys %subs;
+    @targets = sort { $b <=> $a } @targets;
+    my $cfs = 1;        #maximum number of conformers
+    my $prev_conf = 1;  #previous conformer
+    my %sub_objects;    #we'll store all the subs in a hash
+    foreach my $target ( @targets ) {
+        # target supplied as 1-indexed, Aaron uses 0-indexing
+
+        #get the atoms that belong to this substituent and what it's connected to
+        my ($end, $sub_atoms) = $geom->get_sub($target-1);
+
+        #load in the substituent so we know which bonds are flexible
+        $sub_objects{$target} = AaronTools::Substituent->new( name => $subs{$target}, end => $end );
+        #spin the substituent so it's bond to the molecule is pointing in the right direction
+        $sub_objects{$target}->_align_on_geometry( geo => $geom, target => $target-1, end => $end );
+        
+        #keep track of how many conformers we can make
+        for my $i (0..$#{$sub_objects{$target}->{conformers}}){
+            $cfs *= $sub_objects{$target}->{conformers}->[$i];
+        }
+        #keep track of how many conformers each bond has and how many degrees they are apart
+        push @{$geom->{rotations}}, @{$sub_objects{$target}->{rotations}};
+        push @{$geom->{conformers}}, @{$sub_objects{$target}->{conformers}};
+        #we've got to keep track of the bond between the sub and the molecule, too
+        my @new_bond = ($end, $target-1);
+        push @{$geom->{rotatable_bonds}}, \@new_bond;
+
+        #align the sub_object structure so it's right on top of the sub in the input molecule
+        #we need to do this b/c the atom numbering in the input molecule might not be the same
+        #and having them lined up makes it easy to figure out what the number should be
+        $sub_objects{$target}->align_on_subs($geom);
+        #figure out the corresponding rotatable bonds in the input molecule
+        for my $j (0..$#{$sub_objects{$target}->{rotatable_bonds}}) {
+            my $bond = $sub_objects{$target}->{rotatable_bonds}->[$j];
+            my @geom_bond;
+            for my $atom (0..1) { 
+                my $min_dev = $sub_objects{$target}->distance( atom1 => $bond->[$atom], atom2 => 0, geometry2 => $geom );
+                $geom_bond[$atom] = 0;
+                my $dev;
+                for my $i (0..$#{$geom->{elements}}) { 
+                #find the closest atom to this one in geom
+                    if( $sub_objects{$target}->{elements}->[$bond->[$atom]] eq $geom->{elements}->[$i] ) {
+                        $dev = $sub_objects{$target}->distance( atom1 => $bond->[$atom], atom2 => $i, geometry2 => $geom );
+                        if( $dev < $min_dev ) {
+                            $min_dev = $dev;
+                            $geom_bond[$atom] = $i;
+                        }
+                    }
+                }
+            }
+            #throw all of geom's rotatable bonds in an array
+            push @{$geom->{rotatable_bonds}}, \@geom_bond; 
+        }
+    }
+
+    #A lot of the following code is basically copy and pasted from AaronTools::Catalysis
+    #I don't want to deal with catalysis objects because they're too picky
+    my @mod_array;
+    for my $j (0..$#{$geom->{rotations}}) {
+        $mod_array[$j] = 1;
+        for my $k ($j+1..$#{$geom->{rotations}}) {
+            $mod_array[$j] *= $geom->{conformers}->[$k];
+        }
+    }
+
+    unless( $opt{conformers} ) {
+        $opt{conformers} = join(',', (1..$cfs));
+    }
+
+    #make each conformer
+    for my $conf (split /,/, $opt{conformers}) {
+        for my $j (0..$#{$geom->{rotations}}) {
+            my $rotations = int( ($conf-1)/$mod_array[$j] ) % $geom->{conformers}->[$j];
+            $rotations -= int( ($prev_conf-1)/$mod_array[$j] ) % $geom->{conformers}->[$j];
+            my $angle = $geom->{rotations}->[$j] * $rotations;
+            if( $angle != 0 ) { #don't waste time rotating by 0 degrees 
+                my $bond = $geom->{rotatable_bonds}->[$j];
+                my $axis = $geom->get_bond( $bond->[0], $bond->[1] );
+                my $fragment = $geom->get_all_connected( $bond->[1], $bond->[0] );
+                my $point = $geom->get_point( $bond->[1] );
+                #apply rotation to geom
+                $geom->center_genrotate( $point, $axis, deg2rad($angle), $fragment );
+            }
+        }
+
+        # Printing
+        my $comment = _utils::strip_dir($file);
+        $comment .= "-Cf$conf";
+        my $tmp     = [];
+
+        my $outfile = _utils::get_outfile(_utils::strip_dir($file), $opt{output}, ["Cf$conf"]);
+        _utils::mkdirsfor($outfile) if $outfile;
+        print("Saving coords to $outfile\n") if $outfile;
+        $geom->printXYZ( $outfile, $comment, 1 );
+
+        #update prev_conf
+        $prev_conf = $conf;
+
+    }
+
+    return 0;
+}
+
+# read in options
+my %opt;
+my %sublist;
+$opt{help}   = '';
+$opt{subs}   = \%sublist;
+$opt{output} = '-';
+GetOptions( 'help|h'       => \$opt{help},
+            'available|a'  => \$opt{available},
+            'sub|s=s%{1,}' => \%sublist,
+            'conformer|c=s'=> \$opt{conformers},
+            'minimize|m'   => \$opt{minimize_torsion},
+            'write|w:s'   => \$opt{output},
+            'force|f'    => \$opt{force} )
+  or pod2usage(
+    { -exitval => 1,
+      -verbose => 1
+    } );
+
+pod2usage(0) if $opt{help};
+if ( $opt{available} ) {
+    _utils::get_available_subs();
+    exit;
+}
+
+pod2usage(
+    {  -message =>
+         "Please provide at least one target atom and substituent pair",
+       -exitval => 1,
+       -verbose => 1
+    } ) if ( keys(%sublist) < 1 );
+pod2usage(
+    { -message => "Please provide a geometry file",
+      -exitval => 1,
+      -verbose => 1
+    } ) if ( @ARGV < 1 );
+
+&main( $ARGV[0], %opt );
+
+=pod
+
+=head1 SYNOPSIS
+
+make_conf [options] -c n[,m,l,...] -s atom1=sub1 [atom2=sub2 ...] file
+
+=head1 OPTIONS
+
+=over
+
+=item B<-a>, B<--available>
+
+List available substituent names and exit
+
+=item B<-s atom=sub>, B<--sub atom=sub>
+
+Location of substituent (1-indexed) and requested substituent using key=value notation.
+
+=item B<-c>, B<--conformer>
+
+Apply substituent rotations to generate the nth conformer of the input molecule
+
+=item B<-w [directory]>, B<--write [directory]>
+
+Saves files instead of print to STDOUT. Will be saved to <directory>, if provided (defauls to current working directory).
+
+=item B<-h>, B<--help>
+
+Print this help message and exit
+
+=back
+
+=cut
+

@@ -41,10 +41,30 @@ sub main {
 		return 1;
 	}
 
-    if ( $freqs[0] > 0 ) {
+	if ( $opt{list} ){
+		my $s = '';
+		for ( my $i = 0; $i < @freqs; $i++ ){
+			$s .= sprintf("%4d: %12f", $i+1, $freqs[$i]);
+			$s .= "\n";
+		}
+		system 'echo "'.$s.'" | less --prompt="page %db (q to quit, h for help)"';
+		return 0;
+	}
+
+    if ( !defined $opt{mode} && $freqs[0] > 0 ) {
         print {*STDERR} "No imaginary frequencies to follow...\n";
         return 1;
     }
+
+	if (defined $opt{mode}){
+		$opt{mode}--;
+	}else{
+		$opt{mode} = 0;
+	}
+	if ( $opt{mode} < 0 || $opt{mode} > @freqs ){
+		print {*STDERR} "Mode request out of range. Use --list option to see acceptable selection choices\n";
+		return 1;
+	}
 
     if ( $opt{animate} ) {
         # if animate, 10 steps each in + and - direction
@@ -54,7 +74,7 @@ sub main {
             # coord_shift for each step
             my $geom_step = $geom->copy();
             for my $atom ( 0 .. $#{ $geom->{coords} } ) {
-                my $v = $step * V( @{ $vectors[0][$atom] } );
+                my $v = $step * V( @{ $vectors[$opt{mode}][$atom] } );
                 $geom_step->coord_shift( $v, [$atom] );
             }
 
@@ -62,7 +82,7 @@ sub main {
             print("Saving step $step to $opt{output}\n") if $opt{output};
             $geom_step->printXYZ(
                                $opt{output},
-                               "Following imaginary frequency: scaled by $step",
+                               "Following frequency $freqs[$opt{mode}]: scaled by $step",
                                $step == -1 );
         }
     } else {
@@ -74,7 +94,7 @@ sub main {
 
         # coord_shift
         for my $atom ( 0 .. $#{ $geom->{coords} } ) {
-            my $v = $step * V( @{ $vectors[0][$atom] } );
+            my $v = $step * V( @{ $vectors[$opt{mode}][$atom] } );
             $geom->coord_shift( $v, [$atom] );
         }
         # printXYZ
@@ -91,6 +111,7 @@ $opt{output} = '';
 GetOptions( 'help|h'     => \$opt{help},
             'animate|a'  => \$opt{animate},
             'mode|m=i'   => \$opt{mode},
+			'list|l'   => \$opt{list},
             'reverse|r'  => \$opt{reverse},
             'output|o=s' => \$opt{output},
             'force|f'    => \$opt{force} )
@@ -129,6 +150,14 @@ Follow 10 steps each in (+) and (-) direction
 =item B<-r>, B<--reverse>
 
 Follow in the (-) direction
+
+=item B<-m>, B<--mode>
+
+Choose a mode to follow, 1-indexed. Defaults to (1st) imaginary mode.
+
+=item B<-l>, B<--list>
+
+List available modes
 
 =item B<-o outfile.xyz [-f]>, B<--output outfile.xyz [--force]>
 

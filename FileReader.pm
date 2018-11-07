@@ -98,7 +98,7 @@ sub grab_coords {
             my @temp = map { $_ - 1 } split(/-/, $temp);
             $ligand = [$temp[0]..$temp[1]];
         }
-        if ($_ =~ /\s+C:(\S+)/ || ($_ =~ /^C:(\S+)/)) {			   #Reaction Center (C:13)
+        if ($_ =~ /\s+C:(\d+)/ || ($_ =~ /^C:(\S+)/)) {			   #Reaction Center (C:13)
             $center = $1 - 1;
         }
         if ($_ =~ /\s+K:(\S+)/ || ($_ =~ /^K:(\S+)/)) {			   #Key atoms (K:14,15)

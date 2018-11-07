@@ -5,6 +5,7 @@ test/command_line_scripts/cat_substitute/**/test_*.xyz
 test/command_line_scripts/dihedral/01/test_*.xyz
 test/command_line_scripts/follow/*/test_*.xyz
 test/command_line_scripts/genrotate/**/test_*.xyz
+test/command_line_scripts/rotate/**/test_*.xyz
 test/command_line_scripts/grab_coords/*/testout.xyz
 test/command_line_scripts/grab_thermo/*/test.csv
 test/command_line_scripts/substitute/*/test.xyz
