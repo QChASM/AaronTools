@@ -1,5 +1,6 @@
-#!/usr/bin/env -S perl -w
+#!/usr/bin/env perl
 
+use warnings;
 use strict;
 use lib $ENV{'QCHASM'};
 
