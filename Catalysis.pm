@@ -2260,16 +2260,23 @@ sub detect_backbone_subs {
     }
 
     for my $target ( sort { $a <=> $b } keys %{ $self->{substituents} } ) {
-
+		# get atom connected substituent is connected to
+		# use that as avoid atom for get_all_connected
+		# to give the substituent fragment
         my $nearst = $self->{substituents}->{$target}->{end};
         my $groups = $nearst ?
                      $self->get_all_connected($target, $nearst) : '';
+
+		# if fragment not found b/c substituent has no end atom assigned
+		# try using each connected atom as end atom
+		# throw out if anything in the found fragment is constrained
+		# and keep the smallest fragment found
         unless ($nearst && $groups) {
-            my $min = 999;
+            my $min;
             for my $near (@{ $self->{connection}->[$target] }) {
                 my $connected = $self->get_all_connected($target, $near);
                 next if (grep {exists $constraints{$_}} @$connected);
-                if ($#{ $connected } < $min) {
+                if (!defined $min || $#{ $connected } < $min) {
                     $min = $#{ $connected };
                     $nearst = $near;
                     $groups = $connected;
@@ -2277,6 +2284,7 @@ sub detect_backbone_subs {
             }
         }
 
+		# make fragment a substitutent object, if it isn't already
         unless (@{$self->{substituents}->{$target}->{coords}}) {
 
             my $sub = $self->detect_substituent( target => $target,
@@ -2286,6 +2294,7 @@ sub detect_backbone_subs {
             $self->{substituents}->{$target} = $sub;
         }
 
+		# save substituent atoms that aren't directly connected to rest of cata
         push (@sub_atoms, @$groups[1..$#{$groups}]);
     }
 

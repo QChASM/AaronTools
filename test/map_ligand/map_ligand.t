@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env -S perl -w
 
 # Tests AaronTools::Catalysis map_ligand method
 
@@ -54,27 +54,26 @@ sub trial {
         fail("Couldn't map ligand to catalyst");
     };
     diag($@) if $@;
-	return $cata;
+    return $cata;
 }
 
 sub check_rmsd {
     my ( $cata, $ref ) = @_;
-    my ( $total_rmsd, $backbone_rmsd );
+
+	# test backbond rmsd
+    my $backbone_rmsd;
     eval {
         my $cata_backbone = $cata->ligand()->backbone();
         my $ref_backbone  = $ref->ligand()->backbone();
 
-        $total_rmsd = $cata->RMSD( ref_geo => $ref );
-		$backbone_rmsd = $cata_backbone->RMSD( ref_geo => $ref_backbone );
+        $backbone_rmsd = $cata_backbone->RMSD( ref_geo => $ref_backbone );
 
-        ok( $total_rmsd < 1.0 && $backbone_rmsd < 10**(-5),
-            "RMSD validation" );
-        diag("Total RMSD: $total_rmsd");
+        ok( $backbone_rmsd < 10**(-5), "RMSD validation" );
         diag("Backbone RMSD: $backbone_rmsd");
 
         1;
     } or do {
-        fail("Couln't get rmsd between mapped and reference structures");
+        fail("Couldn't get rmsd between mapped and reference structures");
     };
     diag($@) if $@;
 }
@@ -82,13 +81,13 @@ sub check_rmsd {
 my @LIGANDS = ( 'R-SEGPHOS', 'Paton_EL', 'dithiolate-4F', 'squaramide-iPr' );
 foreach my $i ( 1 .. @LIGANDS ) {
     my $ligand = $LIGANDS[ $i - 1 ];
-	diag("Testing ligand $ligand");
+    diag("Testing ligand $ligand");
 
     $i = sprintf( "%02s", $i );
     my $cata = trial( "$i/test", "$i/ref", $ligand );
-	$cata->printXYZ( "$i/result.xyz", '', 1 );
+    $cata->printXYZ( "$i/result.xyz", '', 1 );
 
-	diag("\n");
+    diag("\n");
 }
 
 done_testing();

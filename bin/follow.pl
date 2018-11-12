@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env -S perl -w
 #Reads Gaussian09 output file and checks for imaginary frequencies.
 #If any are found, reads in normal mode corresponding to the "lowest" imaginary frequency and prints geometry placed 0.1 along this mode
 #Now takes command line argument to follow imaginary mode in "reverse" direction

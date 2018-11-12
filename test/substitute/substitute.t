@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env -S perl -w
 
 # Tests substitute functionality on Geometry and Catalysis objects
 

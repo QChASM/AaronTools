@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env -S perl -w
 
 # Test import of coordinates from various filetypes
 
@@ -12,6 +12,7 @@ use Data::Dumper;
 use lib $ENV{QCHASM};
 use lib $ENV{PERL_LIB};
 use AaronTools::Geometry;
+use AaronTools::Catalysis;
 
 sub trial {
     my $cmd  = shift;
@@ -38,6 +39,9 @@ sub trial {
         if ( defined $args->{rmsd} ) {
             $success = test_rmsd( $args->{out}, $args->{ref}, $args->{rmsd},
                                   $args->{reorder} );
+        } elsif ( defined $args->{backbone} ) {
+            $success = test_backbone_rmsd( $args->{out}, $args->{ref},
+                                          $args->{backbone}, $args->{reorder} );
         } else {
             $success = test_file_contents( $args->{out}, $args->{ref} );
         }
@@ -117,6 +121,61 @@ sub test_rmsd {
         };
 
         diag("RMSD: $rmsd");
+        if ( $rmsd > $threshold ) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+sub test_backbone_rmsd {
+    my $test      = shift;
+    my $ref       = shift;
+    my $threshold = shift;
+    my $reorder   = shift;
+    $reorder //= 0;
+
+    # handle lists of files produced by things like cat_screen
+    my ( @ref, @test );
+    eval {
+        if ( -d $ref ) {
+            opendir my ($d), $ref;
+            @ref = readdir $d;
+            @ref = grep { $_ =~ /ref.*\.xyz/ } @ref;
+            @ref = map { $ref . '/' . $_ } @ref;
+            closedir $d;
+            for my $r (@ref) {
+                my $t = $r;
+                $t =~ s/ref/test/;
+                push @test, $t;
+            }
+        } else {
+            @ref  = ($ref);
+            @test = ($test);
+        }
+        1;
+    } or do {
+        return $@;
+    };
+
+    for ( my $i = 0; $i < @ref; $i++ ) {
+        my $ref  = $ref[$i];
+        my $test = $test[$i];
+        my $rmsd;
+
+        eval {
+            $test = new AaronTools::Catalysis( name => $test =~ /(.*)\.xyz/ );
+            $ref  = new AaronTools::Catalysis( name => $ref =~ /(.*)\.xyz/ );
+
+			my $test_backbone = $test->ligand()->backbone();
+			my $ref_backbone = $ref->ligand()->backbone();
+            $rmsd = $test_backbone->RMSD( ref_geo => $ref_backbone, reorder => $reorder );
+            1;
+        } or do {
+            return $@;
+        };
+
+        diag("Backbone RMSD: $rmsd");
         if ( $rmsd > $threshold ) {
             return 0;
         }
