@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env -S perl -w
 #This is a test script go through all cases provided in the test directory.
 
 use strict; use warnings;

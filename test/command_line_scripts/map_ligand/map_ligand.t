@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env -S perl -w
 
 # Test import of coordinates from various filetypes
 
@@ -16,17 +16,17 @@ push @args,
   { args    => '-h',
     message => 'Help flag' };
 push @args,
-  { args    => '01/test.xyz -l bi-isoquinoline-NN-dioxide',
-    message => 'TM centered',
-    ref     => '01/ref.xyz',
-    rmsd    => 10**(-8),
-    reorder => 0 };
+  { args     => '01/test.xyz -l bi-isoquinoline-NN-dioxide',
+    message  => 'TM centered',
+    ref      => '01/ref.xyz',
+    backbone => 10**(-8),
+    reorder  => 0 };
 push @args,
-  { args    => '02/test.xyz -l squaramide',
-    message => 'Organic',
-    ref     => '02/ref.xyz',
-    rmsd    => 10**(-8),
-    reorder => 0 };
+  { args     => '02/test.xyz -l squaramide',
+    message  => 'Organic',
+    ref      => '02/ref.xyz',
+    backbone => 0.25,
+    reorder  => 0 };
 
 foreach my $a (@args) {
     helper::trial( $cmd, $a );
