@@ -1,4 +1,4 @@
-#!/usr/bin/env -S perl -w
+#!/usr/bin/env perl
 
 # Test that necessary configuration files are found
 

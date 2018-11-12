@@ -1,4 +1,4 @@
-#!/usr/bin/env -S perl -w
+#!/usr/bin/env perl
 
 =head1 SYNOPSIS
 
