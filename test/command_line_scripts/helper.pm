@@ -26,12 +26,20 @@ sub trial {
     } else {
         system "$cmd $args->{args} 2>stderr.tmp 1>stdout.xyz";
     }
-    ok( !$?, "$args->{message}: $args->{args}" );
-    open $err, '<', 'stderr.tmp';
-    diag(<$err>) if $?;
-    close $err;
+
+	if ( $args->{err} ){
+		ok( $?, "$args->{message}: $args->{args} ($?)" );
+	}else{
+		ok( !$?, "$args->{message}: $args->{args} ($?)" );
+		open $err, '<', 'stderr.tmp';
+		diag(<$err>) if $?;
+		close $err;
+	}
 
     if ( defined $args->{ref} ) {
+		if ( $args->{err} ){
+			$args->{out} = 'stderr.tmp';
+		}
         unless ( defined $args->{out} ) {
             $args->{out} = 'stdout.xyz';
         }
@@ -57,7 +65,7 @@ sub trial {
 
     }
 
-    system "rm stdout.xyz stderr.tmp";
+	system "rm stdout.xyz stderr.tmp";
 }
 
 sub test_file_contents {
