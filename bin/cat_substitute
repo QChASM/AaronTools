@@ -91,7 +91,7 @@ GetOptions( 'help|h'            => \$opt{help},
             'ligand|l=s%{,}'    => \%liglist,
             'minimize|m'        => \$opt{minimize},
             'force|f'           => \$opt{force},
-            'output|o=s'        => \$opt{output} )  
+            'output|o=s'        => \$opt{output} )
   or pod2usage(
     { -exitval => 1,
       -verbose => 1

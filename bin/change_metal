@@ -1,0 +1,80 @@
+#!/usr/bin/env perl
+
+use strict;
+use lib $ENV{'QCHASM'};
+
+use Getopt::Long;
+use Pod::Usage;
+use AaronTools::Catalysis;
+use Data::Dumper;
+
+unshift @INC, ("$ENV{'QCHASM'}/AaronTools/bin");
+require _utils;
+
+sub main {
+    my $file = shift;
+    my %opt  = @_;
+
+    # create catalysis object with requested substituent indexing
+    my $geom = _utils::get_geom($file);
+    return 1 unless $geom;
+
+    $geom->change_metal( $opt{new_metal} );
+
+    # Printing
+    # prints to STDOUT if $outfile == ''
+    $opt{output} = _utils::handle_overwrite( $opt{output} ) unless $opt{force};
+    _utils::mkdirsfor( $opt{output} ) if $opt{output};
+    print("Saving substituted coords to $opt{output}\n") if $opt{output};
+    $geom->printXYZ( $opt{output}, '', 1 );
+
+    return 0;
+}
+
+# read in options
+my %opt;
+GetOptions( 'help|h'        => \$opt{help},
+            'new_metal|m=s' => \$opt{new_metal},
+            'force|f'       => \$opt{force},
+            'output|o=s'    => \$opt{output} )
+  or pod2usage(
+    { -exitval => 1,
+      -verbose => 1
+    } );
+pod2usage(0) if $opt{help};
+
+# need to supply a geometry file
+pod2usage(
+    { -message => "Please provide one geometry file to substitute",
+      -exitval => 1,
+      -verbose => 1
+    } ) unless ( @ARGV == 1 );
+
+&main( $ARGV[0], %opt );
+
+=pod
+
+=head1 SYNOPSIS
+
+change_metal [options] -m TM file.xyz
+
+=head1 OPTIONS
+
+=over
+
+=item B<-m TM>, B<--new_metal TM>
+
+Replace current metal center with TM
+
+=item B<-o outfile [-f]>, B<--output outfile [--force]>
+
+Output to file instead of STDOUT. Optionally, force overwrite if file exists
+
+=item B<-h>, B<--help>
+
+Print this help message and exit
+
+=back
+
+=cut
+

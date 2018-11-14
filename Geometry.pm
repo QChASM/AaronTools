@@ -13,6 +13,7 @@ our $UNROTATABLE_BOND = UNROTATABLE_BOND;
 our $CUTOFF = CUTOFF;
 our $mass = MASS;
 our $radii = RADII;
+my $TMETAL = TMETAL;
 our $QCHASM = $ENV{'QCHASM'};
 $QCHASM =~ s|/\z||;	#Strip trailing / from $QCHASM if it exists
 our $rij = RIJ;
@@ -1166,6 +1167,115 @@ sub get_bond {
 
     my $bond = $pt1 - $pt2;
     return $bond;
+}
+
+sub get_fragment{
+	my $self = shift;
+	my $start = shift;
+	my $avoid = shift;
+	my $targets = shift;
+
+	$targets //= [0..$#{$self->{elements}}];
+	my @connections = @{ $self->{connection} };
+
+	my @frag = ($start);
+	my @stack = @{ $connections[$start] };
+	@stack = grep { $_ != $avoid } @stack;
+
+	while (@stack > 0){
+		my $current = shift @stack;
+		unless ( grep { $_ == $current } @$targets ){
+			next;
+		}
+		my @conn = @{ $connections[$current] };
+		@conn = grep { $_ != $avoid } @conn;
+		for my $f (@frag){
+			@conn = grep { $_ != $f } @conn;
+		}
+		push @stack, @conn;
+		push @frag, $current;
+	}
+
+	return @frag;
+}
+
+#replaces TM center with another metal
+sub change_metal {
+    my $self      = shift;
+    my $new_metal = shift;
+	my $metal_index = shift;
+
+    my ($old_metal, $old_radii, $new_radii);
+	my $coordinated;
+	my $coords = [];
+	my @fragments = ();
+
+	$metal_index //= -1;
+
+    # error checking
+    unless ( grep { $new_metal eq $_ } keys %$TMETAL ) {
+        die "Replacement transition metal provided unrecognized; " .
+          "failure to change metal center\n";
+    }
+
+	for (my $i=0; $i < @{$self->{elements}}; $i++){
+		my $a = $self->{elements}->[$i];
+		if ( grep { $a eq $_ } keys %$TMETAL ){
+			$metal_index = $i;
+			last;
+		}
+	}
+    if ($metal_index < 0) {
+        die "Original transition metal center unrecognized; " .
+          "failure to change metal center\n";
+    }
+
+	# save old and new properties
+    $old_metal = $self->{elements}->[$metal_index];
+	$old_radii = $TMETAL->{$old_metal};
+	$new_radii = $TMETAL->{$new_metal};
+
+	# save connected atoms
+	$coordinated = $self->{connection}->[$metal_index];
+
+	# get fragments
+	my $left_over = [0..$#{$self->{elements}}];
+	@$left_over = grep { $_!= $metal_index } @$left_over;
+	for my $a (@$coordinated){
+		unless ( grep { $a == $_ } @$left_over ){
+			next;
+		}
+		my @frag = $self->get_fragment($a, $metal_index, $left_over);
+		for my $f (@frag){
+			@$left_over = grep { $_ != $f } @$left_over;
+		}
+
+		push @fragments, \@frag;
+	}
+	push @fragments, $left_over;
+
+	$coords = $self->{coords};
+	for my $frag (@fragments){
+		# determine shift vectors for fragments
+		my $shift = V(0,0,0);
+		for my $f (@$frag){
+			$shift += $coords->[$f];
+		}
+		$shift /= @$frag;
+		$shift = $coords->[$metal_index] - $shift;
+		$shift = $shift*($new_radii/$old_radii) - $shift;
+
+		# fix coords
+		for my $f (@$frag){
+			$coords->[$f] += $shift;
+		}
+	}
+
+
+	# save coord changes
+	$self->{coords} = $coords;
+	# change atom element
+	$self->{elements}->[$metal_index] = $new_metal;
 }
 
 
