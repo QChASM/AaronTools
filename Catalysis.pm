@@ -730,13 +730,25 @@ sub substitute {
 
 sub _replace_all {
     my $self = shift;
-    for my $object ($self->ligand(), $self->substrate()) {
-        for my $target ( sort { $a <=> $b } keys %{ $object->{substituents} } ) {
+    for my $object ( $self->ligand(), $self->substrate() ) {
+        # sort new substituents by size
+        # we want to do the biggest first so minimize goes more smoothly
+        my @targets = keys %{ $object->{substituents} };
+        @targets = sort { $a <=> $b } @targets;
+        @targets = sort {
+            $#{ $object->{substituents}->{$b}->{elements} }
+              <=> $#{ $object->{substituents}->{$a}->{elements} }
+        } @targets;
+
+        for my $target (@targets) {
             next unless $object->{substituents}->{$target}->{sub};
-            next if ($object->{substituents}->{$target}->{sub} =~ /^\d+(,\d+)*$/);
+            next
+              if (
+                  $object->{substituents}->{$target}->{sub} =~ /^\d+(,\d+)*$/ );
             $object->replace_substituent(
-                target => $target,
-                   sub => $object->{substituents}->{$target}->{sub} );
+                             target => $target,
+                             sub    => $object->{substituents}->{$target}->{sub}
+            );
             $self->rebuild_coords();
             $self->minimize_sub_torsion( object => $object,
                                          target => $target );
@@ -815,6 +827,15 @@ sub minimize_sub_torsions {
     my ($object, $subs) = ($params{object}, $params{subs});
 
     $subs //= [ keys %{ $object->{substituents} } ];
+
+	# sort new substituents by size
+	# we want to do the biggest first so minimize goes more smoothly
+	@$subs = keys %{ $object->{substituents} };
+	@$subs = sort { $a <=> $b } @$subs;
+	@$subs = sort {
+		$#{ $object->{substituents}->{$b}->{elements} }
+			<=> $#{ $object->{substituents}->{$a}->{elements} }
+	} @$subs;
 
     for my $target ( @$subs ) {
         $self->minimize_sub_torsion(object => $object, target => $target);
@@ -1190,29 +1211,52 @@ sub remove_clash {
     my $relief = 1;
 
     for my $object ($self->substrate(), $self->ligand()) {
-        for my $key (keys %{ $object->{substituents} }) {
+        # sort new substituents by size
+        my @targets = keys %{ $object->{substituents} };
+        @targets = sort { $a <=> $b } @targets;
+        @targets = sort {
+            $#{ $object->{substituents}->{$b}->{elements} }
+              <=> $#{ $object->{substituents}->{$a}->{elements} }
+        } @targets;
+
+        for my $key (@targets) {
             my %crash;
             my $axis;
             my $sub = $object->{substituents}->{$key};
 
             my $get_crash = sub {
                 %crash = ();
-                for my $atom_sub (0.. $#{ $object->{substituents}->{$key}->{elements} }) {
-                    my @crash = grep {$self->distance( atom1 => $_,
-                                                       atom2 => $atom_sub,
-                                                   geometry2 => $sub)
-                                            < $CRASH_CUTOFF} (0..$#{ $self->{elements} });
+                for my $atom_sub (
+                        0 .. $#{ $object->{substituents}->{$key}->{elements} } )
+                {
+                    my @crash = ();
+                    for ( my $i = 0; $i < @{ $self->{elements} }; $i++ ) {
+                        my $dist = $self->distance( atom1     => $i,
+                                                    atom2     => $atom_sub,
+                                                    geometry2 => $sub );
 
-                    my ($atom_num) = grep { $self->{coords}->[$_] == $sub->{coords}->[$atom_sub] }
-                                        (0..$#{ $self->{coords}});
-                    @crash = grep {$_ != $atom_num} @crash;
+                        my $a1 = $object->{substituents}->{$key}->{elements}->[$atom_sub];
+                        my $a2 = $self->{elements}->[$i];
+                        my $threshold = ( $RADII->{$a1} + $RADII->{$a2} ) * 0.9;
+
+                        if ( $dist < $threshold || $dist < $CRASH_CUTOFF ) {
+                            push @crash, $i;
+                        }
+                    }
+
+                    my ($atom_num) = grep {
+                        $self->{coords}->[$_] == $sub->{coords}->[$atom_sub]
+                    } ( 0 .. $#{ $self->{coords} } );
+                    @crash = grep { $_ != $atom_num } @crash;
 
                     @crash{@crash} = ();
                 }
 
-                my $vector_sum = V(0,0,0);
-                map {$vector_sum += $self->get_bond($_, $sub->{end}, $object)} keys %crash;
-                my $bond = $object->get_bond($key, $sub->{end});
+                my $vector_sum = V( 0, 0, 0 );
+                map {
+                    $vector_sum += $self->get_bond( $_, $sub->{end}, $object )
+                } keys %crash;
+                my $bond = $object->get_bond( $key, $sub->{end} );
                 $axis = $vector_sum x $bond;
             };
 
