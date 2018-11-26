@@ -1263,7 +1263,7 @@ sub change_metal {
 		}
 		$shift /= @$frag;
 		$shift = $coords->[$metal_index] - $shift;
-		$shift = $shift*($new_radii/$old_radii) - $shift;
+		$shift -= $shift*($new_radii/$old_radii);
 
 		# fix coords
 		for my $f (@$frag){
