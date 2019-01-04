@@ -146,7 +146,7 @@ sub killJob {
     }elsif ($queue_type =~ /Slurm/i) {
         $rv = system("scancel $job");
     }elsif ($queue_type =~ /SGE/i) {
-        $rv = system("qdel $job >&/dev/null");
+        $rv = system("qdel $job");
    }
    sleep(3);
    return $rv;
@@ -240,7 +240,7 @@ sub submit_job {
                 $failed = 1;
             }
         } elsif($queue_type =~ /SGE/i) {
-            if(system("qsub $jobname.job >& /dev/null")) {
+            if(system("qsub $jobname.job")) {
 		print {*STDERR} "Submission denied for $jobname.job!\n";
                 $failed = 1;
         	}

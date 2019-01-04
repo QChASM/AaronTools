@@ -43,9 +43,9 @@ sub new {
         $self->set_name($params{name});
         if (-f "$self->{name}.xyz") {
             $self->read_geometry("$self->{name}.xyz");
-            #ligand backbone and sub
             $self->detect_component();
 
+            #ligand backbone and sub
             my @keyatoms = map { @$_ } @{ $self->{ligand_keyatoms} };
             for my $k ( keys %{ $substituents->{ligand} } ){
                 if ( grep { $k == $_ } @keyatoms ){
@@ -54,8 +54,8 @@ sub new {
             }
             $self->ligand()->set_substituents($substituents->{ligand});
             $self->ligand()->detect_backbone_subs( no_new_subs => $params{no_new_subs} );
-            #substrate subs
 
+            #substrate subs
             $self->substrate()->set_substituents($substituents->{substrate});
             $self->substrate()->detect_backbone_subs();
         }
@@ -1311,12 +1311,29 @@ sub new {
     return $self;
 }
 
-
 sub backbone {
     my $self = shift;
     return $self->{backbone};
 }
 
+sub _find_rings {
+    $Data::Dumper::Indent = 0;
+    my $self   = shift;
+
+	my $connections = $self->{connection};
+	my @rings = ();
+	for ( my $i = 0; $i < @$connections; $i++ ){
+		my @i_conn = @{ $connections->[$i] };
+		for my $j (@i_conn){
+			my $all_conn = $self->get_all_connected($i, $j);
+			if (!defined $all_conn){
+				push @rings, $j;
+			}
+		}
+	}
+
+	return @rings;
+}
 
 sub get_all_sub_targets {
     my $self = shift;
@@ -1877,6 +1894,69 @@ sub new {
     return $self;
 }
 
+sub bare_backbone {
+    $Data::Dumper::Indent = 0;
+    my $self           = shift;
+    my @active_centers = map { @$_ } @_;
+
+    my %backbone;
+    my %connections;
+	my @atoms;
+
+    for ( my $i = 0; $i < @{ $self->{connection} }; $i++ ) {
+        $connections{$i} = $self->{connection}->[$i];
+		$backbone{$i} = 1;
+		push @atoms, $i;
+    }
+
+	# for each bond, get all connected on each side
+	# if each fragment has all unique atoms,
+	# determine which side is the substituent
+	for ( my $i = 0; $i < $#atoms; $i++  ){
+		for ( my $j = $i + 1; $j < @atoms; $j++){
+			unless ( grep { $_ == $j } @{ $connections{$i} } ){
+				next;
+			}
+
+			my $part_i = $self->get_all_connected( $i, $j );
+			my $part_j = $self->get_all_connected( $j, $i );
+
+			my $separate = 1;
+			for my $k ( @$part_i ){
+				if ( grep { $_ == $k } @$part_j ){
+					$separate = 0;
+					last;
+				}
+			}
+			if ( $separate ){
+				# substituent is the part without the active centers
+				my $sub = $part_i;
+				for my $ac ( @active_centers ){
+					if ( grep { $_ == $ac } @$sub ){
+						$sub = $part_j;
+						last;
+					}
+				}
+				for my $ac ( @active_centers ){
+					if ( grep { $_ == $ac } @$sub ){
+						$sub  = undef;
+						last;
+					}
+				}
+
+				# remove substituent from backbone
+				if (defined $sub){
+					for my $a ( @$sub ){
+						delete $backbone{$a};
+					}
+				}
+			}
+		}
+	}
+
+	#print Dumper( [sort { $a <=> $b } map { $_ + 44 } keys(%backbone)] ) . "\n";
+	return \%backbone;
+}
 
 #This function detect backbone and substituents connected on the backbone
 #$self->{substituents} and $self->{backbone} will be generated.
