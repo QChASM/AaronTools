@@ -45,6 +45,12 @@ push @args,
     out     => '02/test_min.xyz',
     ref     => '02/ref_min.xyz',
     rmsd    => 0.3 };
+push @args,
+  { args    => '04/test.xyz -l 76=Ph',
+	message => 'Ringed backbone',
+	out		=> '04/test_76-Ph.xyz',
+	ref		=> '04/ref_76-Ph.xyz',
+	rmsd	=> '0.2' };
 
 foreach my $a (@args) {
     helper::trial( $cmd, $a );
