@@ -53,6 +53,19 @@ sub main {
     unless( $opt{conflist} ) { $opt{conflist} = 1 };
     $geom->printXYZ( $opt{output}, '', 1 );
 
+#	my @groups;
+#	for ( my $i = 0; $i < @{$geom->{elements}}; $i++ ){
+#		for my $coord ( @{ $geom->{ligand}->{backbone}->{coords} } ){
+#			if ( abs($geom->{coords}->[$i] - $coord) == 0 ){
+#				push @groups, $i;
+#				last;
+#			}
+#		}
+#	}
+#	print Dumper(\@groups);
+#	my $backbone = $geom->subgeo(\@groups);
+#	$backbone->printXYZ( "backbone.xyz", "", 1 );
+
     return 0;
 }
 

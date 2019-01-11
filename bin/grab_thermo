@@ -37,10 +37,24 @@ sub main {
             print {*STDERR} ("Issue reading log file: $@\nSkipping $file...\n");
             next;
         };
+
         my $energy      = $out->energy();
+		if ( $energy =~ /-?\d+\.?\d*/ ){ $energy = undef; }
+
         my $enthalpy    = $out->enthalpy();
+		if ( $enthalpy =~ /-?\d+\.?\d*/ ){ $enthalpy = undef; }
+
         my $free_energy = $out->free_energy();
-        my $grimmeG     = $out->Grimme_G();
+		if ( $free_energy =~ /-?\d+\.?\d*/ ){ $free_energy = undef; }
+
+        my $grimmeG;
+        eval {
+            local $@;
+            $grimmeG = $out->Grimme_G();
+            1;
+        } or do {
+            $grimmeG = undef;
+        };
 
         if ( $opt{output} ) {
             print( OFILE "$energy,$enthalpy,$free_energy,$grimmeG,$file\n" );

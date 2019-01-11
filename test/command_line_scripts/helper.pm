@@ -117,21 +117,48 @@ sub test_rmsd {
         my $ref  = $ref[$i];
         my $test = $test[$i];
         my $rmsd;
+		my $atoms_match = 1;
 
         eval {
             $test = new AaronTools::Geometry( name => $test =~ /(.*)\.xyz/ );
             $ref  = new AaronTools::Geometry( name => $ref =~ /(.*)\.xyz/ );
 
-            $rmsd = $test->RMSD( ref_geo => $ref, reorder => $reorder );
+			if ( $#{ $test->{elements} } == $#{ $ref->{elements} } ){
+				my @ref_elems = sort { $a cmp $b } @{ $ref->{elements} };
+				for my $t ( sort { $a cmp $b } @{ $test->{elements} }){
+					if ( $t ne $ref_elems[0] ){
+						$atoms_match = 0;
+						last;
+					}else{
+						shift @ref_elems;
+					}
+				}
+			}else{
+				$atoms_match = 0;
+			}
+
+			diag($atoms_match?"Atoms match":"Atoms do not match");
+			unless ( $atoms_match ){
+				return 0;
+			}
+
             1;
         } or do {
             return $@;
         };
 
-        diag("RMSD: $rmsd");
-        if ( $rmsd > $threshold ) {
-            return 0;
-        }
+        eval {
+            $rmsd = $test->RMSD( ref_geo => $ref, reorder => $reorder );
+
+			diag("RMSD: $rmsd");
+			if ( $rmsd > $threshold ) {
+				return 0;
+			}
+
+            1;
+        } or do {
+            return $@;
+        };
     }
     return 1;
 }
