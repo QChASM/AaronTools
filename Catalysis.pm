@@ -1267,7 +1267,9 @@ sub remove_clash {
 
             my $b_times = 0;
 			my @b_angles = ( deg2rad(5), deg2rad(-10), deg2rad(15), deg2rad(-20) );
+			my $last_b = deg2rad(-20);
             my @r_angles = (5, -10, 15, -20, 25, -30);
+			my $last_r = -30;
             my $end_point = $object->get_point($sub->{end});
 
             while(%crash) {
@@ -1281,6 +1283,8 @@ sub remove_clash {
                 }
                 &$get_crash();
 				unless (@b_angles && @r_angles){
+					$sub->center_genrotate($end_point, $axis, -1*$last_b);
+					$object->sub_rotate( target => $key, angle => -1*$last_r );
                     $relief = 0;
                     last;
                 }
