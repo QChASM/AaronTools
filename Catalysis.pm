@@ -1985,7 +1985,9 @@ sub detect_backbone_subs {
     my $no_new_subs = $params{no_new_subs};
 
     my @active_centers = map {@$_} @{ $self->{active_centers} };
-	push @active_centers, @{ $params{keyatoms} };
+	if ( defined $params{keyatoms} ){
+		push @active_centers, @{ $params{keyatoms} };
+	}
 
     my %backbone = %{ $self->bare_backbone([@active_centers]) };
 

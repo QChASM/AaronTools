@@ -37,16 +37,9 @@ sub main {
             print {*STDERR} ("Issue reading log file: $@\nSkipping $file...\n");
             next;
         };
-
         my $energy      = $out->energy();
-		if ( $energy =~ /-?\d+\.?\d*/ ){ $energy = undef; }
-
         my $enthalpy    = $out->enthalpy();
-		if ( $enthalpy =~ /-?\d+\.?\d*/ ){ $enthalpy = undef; }
-
         my $free_energy = $out->free_energy();
-		if ( $free_energy =~ /-?\d+\.?\d*/ ){ $free_energy = undef; }
-
         my $grimmeG;
         eval {
             local $@;
