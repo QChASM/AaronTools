@@ -1329,7 +1329,6 @@ sub backbone {
 }
 
 sub _find_rings {
-    $Data::Dumper::Indent = 0;
     my $self   = shift;
 
 	my $connections = $self->{connection};
@@ -1907,7 +1906,6 @@ sub new {
 }
 
 sub bare_backbone {
-    $Data::Dumper::Indent = 0;
     my $self           = shift;
     my @active_centers = map { @$_ } @_;
 
