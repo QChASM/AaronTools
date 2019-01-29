@@ -53,7 +53,10 @@ sub new {
                 }
             }
             $self->ligand()->set_substituents($substituents->{ligand});
-            $self->ligand()->detect_backbone_subs( no_new_subs => $params{no_new_subs} );
+            $self->ligand()->detect_backbone_subs(
+				no_new_subs => $params{no_new_subs},
+				keyatoms => $self->{ligand_keyatoms}
+			);
 
             #substrate subs
             $self->substrate()->set_substituents($substituents->{substrate});
@@ -692,7 +695,7 @@ sub substitute {
 
     if (! $object) {
         $self->_replace_all();
-        $self->remove_clash;
+        $self->remove_clash();
         $self->rebuild();
         return;
     }
@@ -723,7 +726,7 @@ sub substitute {
 
     $self->_replace_all();
 
-    $self->remove_clash;
+    $self->remove_clash();
     $self->rebuild();
 }
 
@@ -1237,7 +1240,7 @@ sub remove_clash {
 
                         my $a1 = $object->{substituents}->{$key}->{elements}->[$atom_sub];
                         my $a2 = $self->{elements}->[$i];
-                        my $threshold = ( $RADII->{$a1} + $RADII->{$a2} ) * 0.9;
+                        my $threshold = ( $RADII->{$a1} + $RADII->{$a2} ) * 0.85;
 
                         if ( $dist < $threshold || $dist < $CRASH_CUTOFF ) {
                             push @crash, $i;
@@ -1254,7 +1257,7 @@ sub remove_clash {
 
                 my $vector_sum = V( 0, 0, 0 );
                 map {
-                    $vector_sum += $self->get_bond( $_, $sub->{end}, $object )
+                    $vector_sum += $self->get_bond( $_, $sub->{end}, $object );
                 } keys %crash;
                 my $bond = $object->get_bond( $key, $sub->{end} );
                 $axis = $vector_sum x $bond;
@@ -1263,19 +1266,28 @@ sub remove_clash {
             &$get_crash();
 
             my $b_times = 0;
+			my @b_angles = ( deg2rad(5), deg2rad(-10), deg2rad(15), deg2rad(-20) );
+			my $last_b = deg2rad(-20);
             my @r_angles = (5, -10, 15, -20, 25, -30);
+			my $last_r = -30;
             my $end_point = $object->get_point($sub->{end});
+
             while(%crash) {
-                if ($b_times < 3) {
-                    $sub->center_genrotate($end_point, $axis, deg2rad(5));
+                if (@b_angles) {
+                    $sub->center_genrotate($end_point, $axis, shift @b_angles);
                     $b_times ++;
-                }elsif (@r_angles) {
+                }
+				&$get_crash();
+				if (@r_angles) {
                     $object->sub_rotate( target => $key, angle => shift @r_angles);
-                }else {
+                }
+                &$get_crash();
+				unless (@b_angles && @r_angles){
+					$sub->center_genrotate($end_point, $axis, -1*$last_b);
+					$object->sub_rotate( target => $key, angle => -1*$last_r );
                     $relief = 0;
                     last;
                 }
-                &$get_crash();
             }
         }
     }
@@ -1317,7 +1329,6 @@ sub backbone {
 }
 
 sub _find_rings {
-    $Data::Dumper::Indent = 0;
     my $self   = shift;
 
 	my $connections = $self->{connection};
@@ -1895,7 +1906,6 @@ sub new {
 }
 
 sub bare_backbone {
-    $Data::Dumper::Indent = 0;
     my $self           = shift;
     my @active_centers = map { @$_ } @_;
 
@@ -1919,7 +1929,9 @@ sub bare_backbone {
 			}
 
 			my $part_i = $self->get_all_connected( $i, $j );
+			unless ( defined $part_i ){ next; }
 			my $part_j = $self->get_all_connected( $j, $i );
+			unless ( defined $part_j ){ next; }
 
 			my $separate = 1;
 			for my $k ( @$part_i ){
@@ -1931,9 +1943,13 @@ sub bare_backbone {
 			if ( $separate ){
 				# substituent is the part without the active centers
 				my $sub = $part_i;
+				my $start = $i;
+				my $end = $j;
 				for my $ac ( @active_centers ){
 					if ( grep { $_ == $ac } @$sub ){
 						$sub = $part_j;
+						$start = $j;
+						$end = $i;
 						last;
 					}
 				}
@@ -1954,7 +1970,6 @@ sub bare_backbone {
 		}
 	}
 
-	#print Dumper( [sort { $a <=> $b } map { $_ + 44 } keys(%backbone)] ) . "\n";
 	return \%backbone;
 }
 
@@ -1968,45 +1983,57 @@ sub detect_backbone_subs {
     my $no_new_subs = $params{no_new_subs};
 
     my @active_centers = map {@$_} @{ $self->{active_centers} };
+	if ( defined $params{keyatoms} ){
+		push @active_centers, @{ $params{keyatoms} };
+	}
 
     my %backbone = %{ $self->bare_backbone([@active_centers]) };
 
-    for my $atom (keys %backbone) {
-        for my $atom_connected (@{ $self->{connection}->[$atom] }) {
-            if (!exists $backbone{$atom_connected}) {
+    for my $atom ( keys %backbone ) {
+        for my $atom_connected ( @{ $self->{connection}->[$atom] } ) {
+            if ( !exists $backbone{$atom_connected} ) {
                 $backbone{$atom_connected} = 1;
                 #if double or triple connected to the backbone
-                unless ($#{ $self->{connection}->[$atom_connected] } == 0 &&
-                        ($#{ $self->{connection}->[$atom_connected] } + 1 <
-                        $CONNECTIVITY->{$self->{elements}->[$atom_connected]})) {
-                    if ($self->{elements}->[$atom_connected] ne 'H') {
-                        #dectec if the substituent contains any substituents has been
-                        #made before. If yes, including this substituent in the
-                        #backbone, if not make a new backbone
+                unless (
+                     $#{ $self->{connection}->[$atom_connected] } == 0
+                     && ( $#{ $self->{connection}->[$atom_connected] } + 1 <
+                         $CONNECTIVITY->{ $self->{elements}->[$atom_connected] }
+                     ) )
+                {
+                    if ( $self->{elements}->[$atom_connected] ne 'H' ) {
+                   #dectec if the substituent contains any substituents has been
+                   #made before. If yes, including this substituent in the
+                   #backbone, if not make a new backbone
                         my $is_sub = 1;
                         if ($no_new_subs) {
-                            if (grep { $_ == $atom_connected}
-                                    keys %{ $self->{substituents} }) {
-                                my $new_back_atoms = $self->_get_all_connected( $atom_connected,
-                                                                                $atom );
+                            if ( grep { $_ == $atom_connected }
+                                 keys %{ $self->{substituents} } )
+                            {
+                                my $new_back_atoms = $self->_get_all_connected(
+                                                                $atom_connected,
+                                                                $atom );
                                 for my $atom_temp (@$new_back_atoms) {
                                     $backbone{$atom_temp} = 1;
                                 }
                             }
                         }
 
-                        unless($self->_detect_substituent(target => $atom_connected,
-                                                             end => $atom,
-                                                      no_new_sub => $no_new_subs)) {
-                            my $new_back_atoms = $self->_get_all_connected( $atom_connected,
-                                                                            $atom );
+                        unless (
+                            $self->_detect_substituent(
+                                                  target     => $atom_connected,
+                                                  end        => $atom,
+                                                  no_new_sub => $no_new_subs ) )
+                        {
+                            my $new_back_atoms = $self->_get_all_connected(
+                                                                $atom_connected,
+                                                                $atom );
                             for my $atom_temp (@$new_back_atoms) {
                                 $backbone{$atom_temp} = 1;
                             }
                         }
-                    }elsif ($self->{substituents}->{$atom_connected}) {
-                            $self->_detect_substituent(target => $atom_connected,
-                                                       end => $atom);
+                    } elsif ( $self->{substituents}->{$atom_connected} ) {
+                        $self->_detect_substituent( target => $atom_connected,
+                                                    end    => $atom );
                     }
                 }
             }

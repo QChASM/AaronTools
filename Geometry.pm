@@ -367,7 +367,7 @@ sub refresh_connected {
     }
     $self->{connection}->[$atom1] = [@row];
   }
-} #end of get_connected
+}
 
 
 sub get_all_connected {
@@ -1391,20 +1391,8 @@ sub RMSD_reorder {
                 $min_rmsd   = $rmsd;
                 @min_struct = (\@{$o1}, \@{$o2});
             }
-#            if ($avg_time) {
-#                $avg_time = ( $avg_time * ( $count - 1 ) / $count );
-#            }
-#            $avg_time += ( ( time - $time ) / $count );
-#            print Dumper( $rmsd, $min_rmsd, $avg_time, $count );
         }
     }
-
-#	# print matching atoms
-#	my @tmp;
-#	for ( my $i = 0; $i < @{ $min_struct[0] } && $i < @{ $min_struct[1] }; $i++ ){
-#		push @tmp, "$min_struct[0]->[$i]" . "-" . "$min_struct[1]->[$i]";
-#	}
-#	print Dumper( \@tmp );
 
 	# one last RMSD giving the structure with best overlap
 	return $self->RMSD( ref_geo     => $geo2,

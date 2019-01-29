@@ -40,7 +40,14 @@ sub main {
         my $energy      = $out->energy();
         my $enthalpy    = $out->enthalpy();
         my $free_energy = $out->free_energy();
-        my $grimmeG     = $out->Grimme_G();
+        my $grimmeG;
+        eval {
+            local $@;
+            $grimmeG = $out->Grimme_G();
+            1;
+        } or do {
+            $grimmeG = undef;
+        };
 
         if ( $opt{output} ) {
             print( OFILE "$energy,$enthalpy,$free_energy,$grimmeG,$file\n" );
