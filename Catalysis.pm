@@ -1240,7 +1240,7 @@ sub remove_clash {
 
                         my $a1 = $object->{substituents}->{$key}->{elements}->[$atom_sub];
                         my $a2 = $self->{elements}->[$i];
-                        my $threshold = ( $RADII->{$a1} + $RADII->{$a2} ) * 0.85;
+                        my $threshold = ( $RADII->{$a1} + $RADII->{$a2} ) * 0.75;
 
                         if ( $dist < $threshold || $dist < $CRASH_CUTOFF ) {
                             push @crash, $i;
