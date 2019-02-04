@@ -6,7 +6,7 @@ use lib $ENV{'QCHASM'};
 use AaronTools::Constants qw(TEMPLATE_JOB);
 
 use Exporter qw(import);
-use Cwd qw(getcwd);
+use Cwd qw(getcwd realpath);
 
 our @EXPORT = qw(findJob killJob submit_job count_time get_job_template getStatus);
 
@@ -212,6 +212,8 @@ sub submit_job {
         my $current = getcwd();
         $failed = 0;
 
+        my $rp_dir = realpath($dir);
+
         chdir($dir);
         if($queue_type =~ /LSF/i) {
             if(system("bsub < $jobname.job >& /dev/null")) {
@@ -227,7 +229,7 @@ sub submit_job {
             }
         } elsif($queue_type =~ /PBS/i) {
 			# get job status, if applicable
-			my ($status) = findJob($dir);
+			my ($status) = findJob($rp_dir);
 			if ( defined $status ) { $status = getStatus($status); }
 
 			if ( defined $status && $status =~ /[QR]/ ) {
