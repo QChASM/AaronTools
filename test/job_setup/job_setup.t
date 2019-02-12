@@ -56,17 +56,6 @@ if ($submit_fail) {
 my ($job_found) = findJob("$ENV{PWD}");
 ok( $job_found, "Find job" );
 
-# check job status
-my $status = getStatus($job_found);
-ok( $status =~ /[QR]/, "Job status: $status" );
-
-# try to submit already submitted job (should fail)
-my $submit_fail = submit_job( com_file     => 'test.com',
-                              walltime     => $wall,
-                              numprocs     => $n_procs,
-                              template_job => $template_job );
-ok($submit_fail, "Should not duplicate submission");
-
 # kill job and verify it was killed
 if ($job_found) {
 	my $failed_to_kill;
@@ -75,7 +64,7 @@ if ($job_found) {
 		# status is exit status of qdel, etc.
 		# should be 0 if success, non 0 otherwise
         ok( !$status, "Kill job $job_found..." );
-		($failed_to_kill) = findJob("$QCHASM/AaronTools/test/job_setup");
+		($failed_to_kill) = findJob("$ENV{PWD}");
 		# if job still found in the queue, FAIL
 		# else, if $status != 0, FAIL
 		# else, PASS
