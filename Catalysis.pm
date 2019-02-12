@@ -1892,7 +1892,7 @@ sub new {
         if (-f "$QCHASM/AaronTools/Ligands/$self->{name}.xyz") {
             $self->read_geometry("$QCHASM/AaronTools/Ligands/$self->{name}.xyz");
         } elsif (-f "$HOME/Aaron_libs/Ligands/$self->{name}.xyz") {
-            $self->read_geometry("$HOME/AaronTools/Ligands/$self->{name}.xyz");
+            $self->read_geometry("$HOME/Aaron_libs/Ligands/$self->{name}.xyz");
         } else {
             die "Ligand $self->{name} does not exist! Please add ligand to $HOME/Aaron_libs/Ligands\n";
         }
