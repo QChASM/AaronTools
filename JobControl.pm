@@ -228,24 +228,15 @@ sub submit_job {
                 $failed = 1;
             }
         } elsif($queue_type =~ /PBS/i) {
-			# get job status, if applicable
-			my ($status) = findJob($rp_dir);
-			if ( defined $status ) { $status = getStatus($status); }
-
-			if ( defined $status && $status =~ /[QR]/ ) {
-				# check to make sure job isn't already submitted
-				print {*STDERR} "Job already in queue, skipping\n";
-				$failed = 1;
-			}elsif( system("qsub $jobname.job >& /dev/null") ) {
-				# if job not in queue, then try to submit
-				print {*STDERR} "Submission denied for $jobname.job!\n";
+            if( system("qsub $jobname.job >& /dev/null") ) {
+                print {*STDERR} "Submission denied for $jobname.job!\n";
                 $failed = 1;
             }
         } elsif($queue_type =~ /SGE/i) {
             if(system("qsub $jobname.job")) {
 		print {*STDERR} "Submission denied for $jobname.job!\n";
                 $failed = 1;
-        	}
+            }
         }
         chdir($current);
     }
