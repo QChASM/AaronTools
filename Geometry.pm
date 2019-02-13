@@ -343,18 +343,18 @@ sub get_connected {
     }
     $self->{connection}->[$atom1] = union($self->{connection}->[$atom1], [@row]);
   }
-} #end of get_connected
+}
 
 
 sub refresh_connected {
   my $self = shift;
-  my $subgroups = [0..$#{ $self->{elements} }];
+  my $subgroups = [0..$#{ $self->{coords} }];
 
   my $tolerance = 0.2;
 
-  my $connected = [];
+  my @connected = ();
   foreach my $atom1 (@$subgroups) {
-    my @row;
+    my @row = ();
     foreach my $atom2 (@$subgroups) {
       my $distance = $self->distance(atom1 => $atom1, atom2 => $atom2);
 
@@ -365,8 +365,9 @@ sub refresh_connected {
         push(@row, $atom2);
       }
     }
-    $self->{connection}->[$atom1] = [@row];
+	push @connected, [@row];
   }
+  $self->{connection} = [@connected];
 }
 
 

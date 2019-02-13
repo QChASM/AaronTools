@@ -6,6 +6,7 @@ use lib $ENV{'QCHASM'};
 use Getopt::Long;
 use Pod::Usage;
 use AaronTools::G09Out;
+use Data::Dumper;
 
 unshift @INC, ("$ENV{'QCHASM'}/AaronTools/bin");
 require _utils;
