@@ -69,14 +69,14 @@ sub findJob {
 				push(@jobIDs, $1);
 			}
 		}
-	}elsif ($queue_type =~ /Slurm/i) {
-		my @alljobs=`squeue -o %i_%Z -u $ENV{USER}`;
-		foreach my $job (@alljobs) {
-			if($job =~ /$Path/) {
-				my @array = split(/_/, $job);
-				push(@jobIDs,$array[0]);
-			}
-		}
+        }elsif ($queue_type =~ /Slurm/i) {
+                my @alljobs=`squeue -o %i#%Z#%t -u $ENV{USER}`;
+                foreach my $job (@alljobs) {
+                        my ($jobID, $jobPath, $jobStatus) = split(/#/, $job);
+                        if($jobPath =~ /$Path/ and $jobStatus =~ /R|PD/) {
+                                push(@jobIDs,$jobID);
+                        }
+                }
 	}elsif ($queue_type =~ /SGE/i) {
 		my $qstat1 = `qstat -s pr -u $ENV{USER}`; #get qstat output for this user's jobs that are running/pending
 		my @jobs = ($qstat1 =~ m/^\s*?(\w+)/gm); #get the first column of qstat data, which contains job IDs
@@ -132,7 +132,18 @@ sub getStatus {
 		}else{
 			return;
 		}
-	}
+        } elsif($queue_type =~ /Slurm/i) {      #Slurm
+              my $squeue = `squeue -o %t --job $job`;
+              my @lines = split(/^/, $squeue);
+              if(defined $lines[1]) {
+                my $status = $lines[1];
+                chomp($status);
+                return $status;
+              } else {
+                  return;
+              }
+        }
+    return 0;
 }
 
 sub killJob {
@@ -144,7 +155,15 @@ sub killJob {
     }elsif ($queue_type =~ /PBS/i) {
         $rv = system("qdel $job");
     }elsif ($queue_type =~ /Slurm/i) {
-        $rv = system("scancel $job");
+    #scancel seems to return 0 regardless of whether successful, so manually check if job was killed using getStatus
+        system("scancel $job");
+        my $status = getStatus($job);
+        if($status =~ /R|PD/ ) {
+          $rv = 1;
+        } else {
+          $rv = 0;
+        }
+
     }elsif ($queue_type =~ /SGE/i) {
         $rv = system("qdel $job");
    }
@@ -228,24 +247,15 @@ sub submit_job {
                 $failed = 1;
             }
         } elsif($queue_type =~ /PBS/i) {
-			# get job status, if applicable
-			my ($status) = findJob($rp_dir);
-			if ( defined $status ) { $status = getStatus($status); }
-
-			if ( defined $status && $status =~ /[QR]/ ) {
-				# check to make sure job isn't already submitted
-				print {*STDERR} "Job already in queue, skipping\n";
-				$failed = 1;
-			}elsif( system("qsub $jobname.job >& /dev/null") ) {
-				# if job not in queue, then try to submit
-				print {*STDERR} "Submission denied for $jobname.job!\n";
+            if( system("qsub $jobname.job >& /dev/null") ) {
+                print {*STDERR} "Submission denied for $jobname.job!\n";
                 $failed = 1;
             }
         } elsif($queue_type =~ /SGE/i) {
             if(system("qsub $jobname.job")) {
 		print {*STDERR} "Submission denied for $jobname.job!\n";
                 $failed = 1;
-        	}
+            }
         }
         chdir($current);
     }
