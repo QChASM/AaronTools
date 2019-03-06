@@ -343,7 +343,7 @@ sub get_connected {
     }
     $self->{connection}->[$atom1] = union($self->{connection}->[$atom1], [@row]);
   }
-} #end of get_connected
+}
 
 
 sub refresh_connected {

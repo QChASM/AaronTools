@@ -67,7 +67,7 @@ sub grab_coords {
 	  my $num_structs = 0;
       while(<INFILE>) {
         chomp;	#allowing for multiple spaces at start of line in XYZ file
-		if ($_ =~ /^\d+$/){
+		if ($_ =~ /^\s*\d+$/){
 			if ($num_structs == 1){
 				warn "XYZ file with multiple structures detected, using last structure...\n";
 			}
@@ -79,7 +79,7 @@ sub grab_coords {
         if($_ =~ /^\s*([a-zA-Z]+)\s+(-?\d+\.?\d*)\s+(-?\d+\.?\d*)\s+(-?\d+\.?\d*)/) {
           my $coord = [$2, $3, $4];
           push(@coords, $coord);
-          push(@atoms, $1);
+          push(@atoms, "\u\L$1");
           push(@flags, 0);
           next;
         }
@@ -124,7 +124,6 @@ sub grab_coords {
         if ($_ =~ /\s+CF:(\S+)/ || ($_ =~ /^CF:(\S+)/)) {		    #Conformer information (CF:XXX)
             $conformer = [split (/,/, $1)];
         }
-
       }
       #my $correct_input = &examine_structure($key_atoms, $bonds);
 
