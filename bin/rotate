@@ -91,7 +91,7 @@ pod2usage(
        -exitval => 1,
        -verbose => 1
     }
-) unless ( @ARGV > 0 and $opt{axis} and ( $opt{angle} or $opt{nrots} > 1 ) );
+) unless ( @ARGV > 0 and $opt{axis} and ( defined($opt{angle}) or $opt{nrots} > 1 ) );
 
 # axis should be cartesian axis
 pod2usage(
