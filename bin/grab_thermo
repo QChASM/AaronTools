@@ -24,7 +24,7 @@ sub main {
         open( OFILE, ">", $opt{output} )
           || die "$0: can't open $opt{output} for writing: $!\n";
 
-        my $header = sprintf( "%s,%s,%s,%s,%s\n", qw(E H G Grimme_G FileName) );
+        my $header = sprintf( "%s,%s,%s,%s,%s\n", qw(E H G G(quasi-RRHO) FileName) );
         print( OFILE $header );
     }
 
@@ -54,10 +54,10 @@ sub main {
             print( OFILE "$energy,$enthalpy,$free_energy,$grimmeG,$file\n" );
         } else {
             print("*** $file ***\n") if $#ARGV > 0;
-            printf( "E        = %.6f\n",   $energy );
-            printf( "H        = %.6f\n",   $enthalpy );
-            printf( "G        = %.6f\n",   $free_energy );
-            printf( "Grimme_G = %.6f\n\n", $grimmeG );
+            printf( "E             = %.6f\n",   $energy );
+            printf( "H             = %.6f\n",   $enthalpy );
+            printf( "G             = %.6f\n",   $free_energy );
+            printf( "G(quasi-RRHO) = %.6f\n\n", $grimmeG );
         }
     }
     if ( $opt{output} ) {
