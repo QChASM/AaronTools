@@ -2305,10 +2305,10 @@ sub new {
     if (exists $params{name}) {
         $self->set_name($params{name});
 
-        if (-f "$QCHASM/AaronTools/Subs/$self->{name}.xyz") {
-            $self->read_geometry("$QCHASM/AaronTools/Subs/$self->{name}.xyz");
-        } elsif (-f "$ENV{HOME}/Aaron_libs/Subs/$self->{name}.xyz") {
+        if (-f "$ENV{HOME}/Aaron_libs/Subs/$self->{name}.xyz") {
             $self->read_geometry("$ENV{HOME}/Aaron_libs/Subs/$self->{name}.xyz");
+        } elsif (-f "$QCHASM/AaronTools/Subs/$self->{name}.xyz") {
+            $self->read_geometry("$QCHASM/AaronTools/Subs/$self->{name}.xyz");
         } elsif ( $self->{name} ) {
             #if we don't have the substituent in the library, we can try to build it
             $self->{name} = &_replace_common_names( $self->{name} );
