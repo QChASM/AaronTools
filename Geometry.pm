@@ -516,6 +516,9 @@ sub detect_substituent {
 
 sub examine_constraints {
     my $self = shift;
+    my $cutoff = shift;
+
+    $cutoff //= $CUTOFF->{D_CUTOFF};
 
     my @failed;
     for my $con (@{ $self->{constraints} }) {
@@ -529,10 +532,10 @@ sub examine_constraints {
 
         my $d = $self->distance( atom1 => $bond->[0],
                                  atom2 => $bond->[1] );
-        if ($d - $d_con > $CUTOFF->{D_CUTOFF}) {
+        if ($d - $d_con > $cutoff) {
             push (@failed, -1);
             last;
-        }elsif ($d_con - $d > $CUTOFF->{D_CUTOFF}) {
+        }elsif ($d_con - $d > $cutoff) {
             push (@failed, 1);
             last;
         }
@@ -1980,7 +1983,7 @@ sub XYZ {
     my $return = '';
     $return = sprintf "$num_atoms\n$comment\n";
     foreach my $atom (0..$#{ $self->{elements} }) {
-       $return .= sprintf "%s%14.6f%14.6f%14.6f\n", ($self->{elements}->[$atom], @{ $self->{coords}->[$atom] });
+       $return .= sprintf "%-2s%14.6f%14.6f%14.6f\n", ($self->{elements}->[$atom], @{ $self->{coords}->[$atom] });
     }
     return $return;
 }
@@ -2304,10 +2307,10 @@ sub new {
     if (exists $params{name}) {
         $self->set_name($params{name});
 
-        if (-f "$QCHASM/AaronTools/Subs/$self->{name}.xyz") {
-            $self->read_geometry("$QCHASM/AaronTools/Subs/$self->{name}.xyz");
-        } elsif (-f "$ENV{HOME}/Aaron_libs/Subs/$self->{name}.xyz") {
+        if (-f "$ENV{HOME}/Aaron_libs/Subs/$self->{name}.xyz") {
             $self->read_geometry("$ENV{HOME}/Aaron_libs/Subs/$self->{name}.xyz");
+        } elsif (-f "$QCHASM/AaronTools/Subs/$self->{name}.xyz") {
+            $self->read_geometry("$QCHASM/AaronTools/Subs/$self->{name}.xyz");
         } elsif ( $self->{name} ) {
             #if we don't have the substituent in the library, we can try to build it
             $self->{name} = &_replace_common_names( $self->{name} );
@@ -2322,7 +2325,7 @@ sub new {
     }
 
     $self->{end} = $params{end};
-    #This is the potential substituent in the furture
+    #This is the potential substituent in the future
     $self->{sub} = $params{sub};
 
     return $self;
@@ -2332,10 +2335,30 @@ sub build_sub {
     #this builds a substituent based on the name of the object passed to it
     #e.g. passing it an object named 4-OMe-Ph will grab the OMe and stick it on the para position of the Ph substituent
     #passing it 2-{4-OMe-Ph}Et will build 2-(p-methoxyphenyl)ethyl
+    #using the 'explicit notation', you could build the same substituent by passing the following string:
+    #   decorations={decorations={OMe} positions=9 foundation=Ph} positions=4 foundation=Et
+    #note the different numbering scheme
+
     my $self = shift;
 
-    my $basename; #basename is the thing build_sub decorates with other substituents (i.e. 4-OMe-Ph: Ph is basename, 4-OMe is a decoration)
+    #prepare some error messages for a few things that could go wrong here
+    my $foundationless_error = "Error while trying to build $self->{name}:\n" .
+                               "No foundation identified\n";
+    my $positionless_error = "Error while trying to build $self->{name}:\n" .
+                             "Substituent positions ";
+    my $partless_error = "Error while trying to build $self->{name}:\n" .
+                         "Decorations not specified ";
+    my $Hless_error = "Error while trying to build $self->{name}:\n" .
+                      "no H atom found ";
 
+    my $basename; #basename is the thing build_sub decorates with other substituents (i.e. 4-OMe-Ph: Ph is basename, 4-OMe is a decoration)
+    my $partname; #partname is the decorations
+    my @positions; #positions are the positions of each decoration
+    my %parts; #dictionary with each key corresponding to a different decoration
+
+    my $explicit_numbering = 0; #explicit numbering off - try to number heavy atoms in a sane order
+
+    #this identifies the foundation for the simple notation
     if( $self->{name} =~ /-/ ){
         $basename = (split /-/, $self->{name})[-1]; #grab the thing after the last hyphen - this is the basename
     }
@@ -2352,35 +2375,105 @@ sub build_sub {
         }
     }
 
-    unless( $basename ) { die "Error while trying to build $self->{name}:\nUnable to add substituents to '$basename'\n" }
+    if( $self->{name} =~ /foundation=(\S*)/ ) {
+    #substituent specs for not simple cases
+    ##user specifies 'positions=7,8 decorations={{Me},{NO2}} foundation=Ph'
+    ##this sets arrays such that Me replaces atom 7 of Ph and NO2 replaces atom 8
+        
+        #update the error message for this format 
+        $foundationless_error .= "Foundation should specified as foundation=Ph\n";
+
+        $explicit_numbering = 1;
+
+        #grab the decorations first
+        $self->{name} =~ m/decorations=(.*)/;
+        my $decorations = $1;
+        $decorations = &_find_matching_brackets( $decorations );
+        (my $name_wo_decorations = $self->{name}) =~ s/decorations={$decorations}//;
+        #chop off the decorations before finding positions & foundation b/c nested built subs could mess that up
+        my @parts_array = ();
+        #put decorations in an array
+        while( $decorations ) {
+            #chop off one decoration at a time until there are no more
+            my $part = &_find_matching_brackets( $decorations );
+            unless( $part ) {
+                #error out if nothing was in the brackets
+                if( @parts_array ) { 
+                    $partless_error .= "after $parts_array[-1]\n"; 
+                } else {
+                    $partless_error .= "in the expected notation (e.g. decorations={{OMe},{NO2}})\n";
+                }
+                die $partless_error
+            }
+            push @parts_array, $part;
+            $decorations =~ s/{$part}//;
+            $decorations =~ s/^,//;
+        }
+        #grab positions and split on commas
+        $name_wo_decorations =~ /positions=(\S*)/;
+        my @position_array = split /,/, $1;
+        #grab foundation
+        $name_wo_decorations =~ /foundation=(\S*)/;
+        $basename = $1;
+        #for simplicity, the parts are put into a hash and the positions are put into an array of arrays
+        foreach my $part_index (0..$#parts_array) {
+            $parts{$part_index} = $parts_array[$part_index];
+            $positions[$part_index] = [$position_array[$part_index] - 1];
+        }
+
+        #more parts than positions were given
+        if( $#parts_array > $#position_array ) {
+            $positionless_error .= "not specified for all decorations\n";
+            die $positionless_error;
+        }
+
+        #more positions than parts were given
+        if ( $#position_array > $#parts_array ) {
+            my $max_pos = $position_array[$#parts_array+1];
+            $partless_error .= "parts not specified for position $max_pos\n";
+            die $partless_error;
+        }
+
+    } else {
+    #substituent specifications for simple cases, like 4-Me-Ph
+        #update the error message for the simple format
+        $foundationless_error .= "See the substituent page on the AaronTools github wiki for examples\n"; 
+        
+        #parts and positions are just the name minus the basename and any trailing hyphen
+        $partname = substr($self->{name}, 0, -length($basename));
+        $partname =~ s/-$//;
+    }
+
+    unless( $basename ) { die $foundationless_error }
     # ^ this will generally just catch when the user has a typo in the name of something
 
-    my $partname = substr($self->{name}, 0, -length($basename));
-    $partname =~ s/-$//; #decorations are the subname minus the basename and the last hyphen
-    my %parts; #dictionary for the different parts we're going to stick on the base
-    my @positions; #dictionary for the corresponding positions of the parts
-
+    #the following loop only handles names given in the simple format, not the explicit format
     my $i = 0; #the decorations are processed by sequencially removing characters from $partname
-    while( length($partname) > 0 ) {
+    while( $partname ) {
         if( $partname =~ m/^-/ ) {
             $partname =~ s/^-?//;
         }
         my ($posi) = $partname =~ m/^((\d+-)+)/; #positions are in the format nn-mm-
-        unless( $posi ) { die "Error while trying to build $self->{name}:\nSubstituent positions not specified for $partname\n" };
+        #if we didn't find any positions, error out
+        unless( $posi ) { 
+            my $questionable_part = (split /-/, $partname)[0];
+            $positionless_error .= "not specified for $questionable_part\n";
+            die $positionless_error;
+        }
         $partname =~ s/^$posi//;
+        #check to see if this part starts with a bracket
         if( $partname =~ m/^{/ ) {
-        #check to see if this part has brackets in it
             $parts{$i} = &_find_matching_brackets($partname); #grab the contents inside the first matching brackets
             $partname =~ s/^{$parts{$i}}//; #remove it from partname
         } else {
         #this'll grab the NO2 part of NO2-4-F and let 4-F be handled the next pass through the while loop
         #it'll also handle things like 2-{2-{4-OMe-Ph}Et}CHCH2 : 2-{4-OMe-Ph}Et would be the part
-            my ($part) = $partname =~ m/^(\w+|(\{.*\}))/;
+            my ($part) = $partname =~ m/^(\w+)/;
             $parts{$i} = $part;
             $partname =~ s/^$part//;
         }
-        $posi =~ s/-$//;
-        my @posis = split /-/, $posi;
+        $posi =~ s/-$//; #cut off trailing hyphen 
+        my @posis = split /-/, $posi; #split on hyphen, substract 1 (0 indexing) and put into an array
         for my $p (0..$#posis) { $posis[$p] -= 1 } ;
         $positions[$i] = [@posis];
         $i += 1;
@@ -2399,32 +2492,47 @@ sub build_sub {
     my @n = $base->_number_atoms; #get the order of the heavy atoms
 
     for my $key (keys %parts) {
+        #get the current length of the corresponding positions array
         my $pos_len = scalar(@{$positions[$key]});
         my $j = 0;
-        while( $j < $pos_len ) { #this loop makes it so you can put 246-Me-Ph instead of 2-4-6-Me-Ph
+        while( $j < $pos_len and not $explicit_numbering) { #this loop makes it so you can put 246-Me-Ph instead of 2-4-6-Me-Ph
             while( $positions[$key]->[$j] > $#n ) {
                 my $p = $positions[$key]->[$j];
                 $positions[$key]->[$j] = $p % 10;              #grab the ones place
                 my $np = ($p - $positions[$key]->[$j])/10 - 1; #grab the tens place, take off 1 (0 indexing...)
-                if( $np == -1 ) { die "Error while trying to build $self->{name}:\nEnd of register while parsing positions of $parts{$key}\n" }
-                # ^ this catches when the position is greater than the number of atoms on the base (e.g. 3-Me-Et)
-                # such an issue would cause an infinite loop without this die
+                if( $np == -1 ) { 
+                # this catches when the position is greater than the number of atoms on the base (e.g. 3-Me-Et)
+                    $positionless_error .= "reached end of register while parsing positions of $parts{$key}\n";
+                    die $positionless_error; 
+                }
                 push @{$positions[$key]}, $np;
                 $pos_len += 1; #we now have an aditional place to add this substituent
             }
             $j += 1;
         }
         for my $at (@{$positions[$key]}) {
-            my $H = $base->_give_me_an_H($n[$at]); #grab an H on the nth atom
-            unless( $H ) { die "Error while trying to build $self->{name}:\nCould not find an H on atom $n[$at] of $basename\n"; }
+            my $H;
+            if( $explicit_numbering ) {
+                $H = $at; #use whatever atom was specified 
+            } else {
+                $H = $base->_give_me_an_H($n[$at]); #grab an H atom on the nth atom
+            }
+            unless( $H ) { 
             # ^ this catches when the atom on the base has no H's left (e.g. 2-2-CF3-Ph)
+                $Hless_error .= "on atom $n[$at] of $basename\n";
+                die $Hless_error; 
+            }
+            #replace part of base with a decoration
             $base->substitute( target => $H, sub => $parts{$key}, minimize_torsion => 0);
         }
     }
 
     my $new_rot_sym = $base->check_rot_sym( $base_rot_sym );
-    if( $new_rot_sym != $base_rot_sym ) { #if the new substituent doesn't have the same symmetry as the
-                                          #base, we'll need to adjust the number of conformers it has
+    if( $new_rot_sym != $base_rot_sym ) { 
+        #if the new substituent doesn't have the same symmetry as the
+        #base, we'll need to adjust the number of conformers it has
+        #the new number of conformers depends on if base_rot_sym is odd or even
+        #a Me would get 3 rotations while Ph would get 4
         $base->{rotations}->[0]  =  $base->{conformer_angle} * ( 1 + $base_rot_sym % 2 );
         $base->{conformers}->[0] =  360/$base->{rotations}->[0];
     } else {
@@ -2452,7 +2560,8 @@ sub _replace_common_names {
     $name =~ s/^MePh2/11-Ph-Me/;                        #diphenylmethyl
     $name =~ s/^MePh3/111-Ph-Me/;                       #triphenylmethyl
     $name =~ s/^EtF5$/1-CF3-11-F-Me/;                   #pentafluoroethyl
-    $name =~ s/^sBu$/1-Et-Et/;                          #sec-butyl
+        #no sec-butyl until I have a way to make both stereoisomers 
+        #$name =~ s/^sBu$/1-Et-Et/;                          #sec-butyl
     $name =~ s/^iBu$/1-iPr-Me/;                         #iso-butyl
     $name =~ s/^nBu$/1-{1-Et-Me}Me/;                    #n-butyl
     $name =~ s/^Pr$/1-Et-Me/;                           #n-propyl
@@ -2495,12 +2604,14 @@ sub _find_matching_brackets {
         }
         $position += 1;
     }
+    
 }
 
 sub _number_atoms {
     #determines order of atoms on straight alkyl chains and phenyl rings
     #I would not trust it with things that are not straight alkyl chains or phenyl rings
-    #this should probably be made more robust
+    #first atom is the first heavy atom
+    #atoms are numbered by shortest bond length
     my $self = shift;
     my @out; #output array - nth item in this array is the nth atom (e.g. for Et, $out[1] will be the index of C in CH3)
 
@@ -2525,9 +2636,11 @@ sub _number_atoms {
     while( $#out < $#heavy_atoms ) { #this will go until all heavy atoms are in the list
         my $distance = -1;
         for my $j (@{$self->{connection}->[$i]}) {
+            #go through each of the heavy atoms bonded to this one, then move to the
+            #next closest that hasn't been added to our list yet
             if( grep( /^$j$/, @heavy_atoms ) ) {
                 my $d = $self->distance(atom1 => $i, atom2 => $j);
-                if( ($d < $distance or $distance < 0) and not grep( /^$j$/, @out ) ) {
+                if( ($d <= $distance or $distance < 0) and not grep( /^$j$/, @out ) ) {
                     $distance = $self->distance(atom1=> $i, atom2=> $j);
                     $b = $j;
                 }
@@ -2538,14 +2651,18 @@ sub _number_atoms {
             $i = $b;
         } else { #if we try to add the atom we just added, walk backwards until we get on a different branch
             ($i) = grep { $out[$_] eq $i } (0..$#out);
-            $i -= 1;
-            $b = $i;
+            if( $i ) {
+                $i += -1;
+                $b = $i;
+            } else {
+                $i = $out[0];
+            }
         }
     }
 
     $i = 1;
     while($i <= $#out) { #get rid of atoms that don't have hydrogen bonded to them
-        my $Hs = 0;      #this'll cause fusion C's to be skipped in things like naphthyl
+        my $Hs = 0;      #this'll cause fusion C's in naphthyl or carbonyl O's to be skipped
         for my $bonded (@{$self->{connection}->[$out[$i]]}) {
             if( $self->{elements}->[$bonded] eq 'H' ) {
                 $Hs += 1;
@@ -2553,6 +2670,7 @@ sub _number_atoms {
             }
         }
         if( $Hs == 0 ) {
+            #no H's get the boot
             splice @out, $i, 1;
         } else {
             $i += 1;
@@ -2564,15 +2682,19 @@ sub _number_atoms {
 
 sub _give_me_an_H {
     #finds an H bonded to a given atom
-    my $self = shift;
-    my $at = shift;
+    my $self = shift; 
+    my $at = shift; 
     my $H; #atom number of an H on atom number at
-    my $natoms = $#{$self->{elements}};
-    my $min_dot = -1;
+    my $natoms = $#{$self->{elements}}; #number of atoms
+    #the H that is picked is the one that is most parallel to the origin-atom #0 vector
+    #we'll need to take a dot product to determine which H to return
+    my $min_dot = -1; #not to be confused with MNDOT 
+    #get origin-aotm #0 vector and normalize it
     my $bondv = $self->get_point(0);
     $bondv = $bondv / abs($bondv);
     for my $i (@{$self->{connection}->[$at]}) {
         if( ${$self->{elements}}[$i] eq 'H' ) {
+            #get the atom-H bond vector and normalize it
             my $hv = $self->get_bond($i, $at);
             $hv = $hv / abs($hv);
             my $dot = $bondv * $hv;
@@ -2626,20 +2748,21 @@ sub check_rot_sym {
     my $self = shift;
     my $order = shift; #n in C_n for the level of rotational symmetry we're expecting
 
-    my $threshold = 5E-1; #really easy threshold b/c we'd have to do a really small increment otherwise
+    my $threshold = 2E-1; #really easy threshold b/c we'd have to do a really small increment otherwise
     my $increment = 5;
     my $ref_geom = $self->copy; #make a copy
     my $axis = $self->get_point(0);
     my $sub_atoms = [(0..$#{$self->{elements}})];
+    my $deg = 360/$order;
     $ref_geom->center_genrotate($axis, $axis, deg2rad(360/$order), $sub_atoms); #apply the C_n operation
 
-    $self->align_on_subs($ref_geom, 0);
+    $self->align_on_subs($ref_geom, 0); #align all of the substituents without rotating the base
 
     my $SD = $self->_sym_SD($ref_geom);
     if( $SD < $threshold ) { #after we've checked all the bonds, see if the deviation is below the threshold
         return $order;
     } else {
-        return 1; #if it isn't symmetry is 'broken', and it's now just a C1
+        return 1; #if it isn't, symmetry is 'broken' and it's now just a C1
     }
 }
 
