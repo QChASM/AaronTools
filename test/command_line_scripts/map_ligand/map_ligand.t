@@ -19,7 +19,7 @@ push @args,
   { args     => '01/test.xyz -l bi-isoquinoline-NN-dioxide',
     message  => 'TM centered',
     ref      => '01/ref.xyz',
-    backbone => 10**(-8),
+    backbone => 10**-6,
     reorder  => 0 };
 push @args,
   { args     => '02/test.xyz -l squaramide',
