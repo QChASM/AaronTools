@@ -347,17 +347,20 @@ sub call_g09 {
 
 
 sub get_job_template {
+    my ($template_file) = @_;
+    #if no job template was passed, default to template.job
+    $template_file //= "$QCHASM/AaronTools/template.job";
     my $template_job = {};
-    if ( -e "$QCHASM/AaronTools/template.job") {
+    if ( -e $template_file ) {
         my $job_invalid;
         my $template_pattern = TEMPLATE_JOB;
 
-        $template_job->{job} = "$QCHASM/AaronTools/template.job";
+        $template_job->{job} = $template_file;
         $template_job->{formula} = {};
         $template_job->{env} = '';
         $template_job->{command} = [];
 
-        open JOB, "<$QCHASM/AaronTools/template.job";
+        open JOB, "<$template_file";
         #get formulas
         JOB:
         while (<JOB>) {
@@ -372,7 +375,7 @@ sub get_job_template {
                                /\Q$_\E/} values %$template_pattern;
 
                         unless (@pattern) {
-                           print {*STDERR} "template.job in $QCHASM/AaronTools is invalid. " .
+                           print {*STDERR} "job template $template_file is invalid. " .
                                  "Formula expression is wrong. " .
                                  "Please see manual.\n";
                            $job_invalid = 1;
@@ -389,7 +392,7 @@ sub get_job_template {
         chomp($template_job->{env});
         chomp($template_job->{command});
     }else {
-        die "Cannot find template.job in $QCHASM/AaronTools folder.\n";
+        die "Cannot find $template_file\n";
     }
 
     return $template_job;

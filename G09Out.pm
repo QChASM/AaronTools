@@ -364,9 +364,23 @@ sub Grimme_G {
     if (!$self->frequency()) {
         print {*STDERR} "Cannot calculate the Grimme free energy without vibrational frequencies\n";
     }
-    my $rottemps = $self->{rotational_temperature};
+    my @rottemps = @{$self->{rotational_temperature}};
+    
+    my $n_rottemps = $#rottemps;
+    my $i = 0;
+    while( $i <= $n_rottemps ) {
+        if( $rottemps[$i] == 0 ) {
+            splice @rottemps, $i, 1;
+            $n_rottemps -= 1;
+        } else {
+            $i += 1;
+        }
+    }
 
-    my $Bav = ($h**2/(24*pi**2*$kb))*(1/$rottemps->[0] + 1/$rottemps->[1] + 1/$rottemps->[2]);
+    my $Bav = 0;
+    foreach my $rottemp (@rottemps) {
+        $Bav += ($h**2/(24*pi**2*$kb))*(1/$rottemp);
+    }
 
     my $T = $params{temperature} || $self->{temperature};
     my $mass = $self->{mass};
@@ -385,9 +399,22 @@ sub Grimme_G {
     my $Se = $R*(log($mult));
 
     #Rotational
-    my $qr = (sqrt(pi)/$sigmar)*($T**(3/2)/sqrt($rottemps->[0]*$rottemps->[1]*$rottemps->[2]));
-    my $Sr = $R*(log($qr) + 3/2);
-    my $Er = 3*$R*$T/2;
+    my $qr;
+    my $Sr;
+    if( $#rottemps == 2 ) {
+        #nonlinear molecules
+        $qr = (sqrt(pi)/$sigmar)*($T**(3/2)/sqrt($rottemps[0]*$rottemps[1]*$rottemps[2]));
+        $Sr = $R*(log($qr) + 3/2);
+    } elsif( $#rottemps == 1) {
+        #linear
+        $qr = (1./$sigmar)*($T/sqrt($rottemps[0]*$rottemps[1]));
+        $Sr = $R*(log($qr) + 1.);
+    } else {
+        $qr = 1;
+        $Sr = 0;
+    }
+    
+    my $Er = ($#rottemps + 1)*$R*$T/2;
 
     #Vibirational
     my ($Ev, $Sv_quasiRRHO) = (0, 0, 0);
@@ -397,7 +424,7 @@ sub Grimme_G {
                       log(1-exp(-$vibtemps[$i]/$T));
         $Ev += $vibtemps[$i]*(1/2 + 1/(exp($vibtemps[$i]/$T) - 1));
 
-        #quassi_RRHO
+        #quasi_RRHO
         my $mu = $h/(8*pi**2*$freqs[$i]*$c);
         my $mu_prime = $mu*$Bav/($mu + $Bav);
         my $Sr_eff = 1/2 + log(sqrt(8*pi**3*$mu_prime*$kb*$T/$h**2));
