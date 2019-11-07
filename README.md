@@ -5,6 +5,6 @@ These tools can be used either directly within a Perl script using AaronTools ob
 
 Documentation on installing and using AaronTools is <a href="https://github.com/QChASM/AaronTools/wiki">available here.</a>
 
-A Python implementation of AaronTools is also < a href="https://github.com/QChASM/AaronTools.py">available here.</a>
+A Python implementation of AaronTools is also <a href="https://github.com/QChASM/AaronTools.py">available here.</a>
 
 If you have any questions, feel free to contact us at catalysttrends@uga.edu
