@@ -1,0 +1,93 @@
+#!/usr/bin/env perl
+
+use strict;
+use lib $ENV{'QCHASM'};
+
+use Getopt::Long;
+use Pod::Usage;
+use AaronTools::Geometry;
+
+unshift @INC, ("$ENV{'QCHASM'}/AaronTools/bin");
+require _utils;
+
+sub main {
+    my $reffile = shift;
+    my %opt     = @_;
+
+    # read in reference geometry
+    my $refgeom = _utils::get_cat($reffile);
+    return 1 unless $refgeom;
+
+    my $ligand = _utils::get_lig( $opt{ligand} );
+    return 1 unless $ligand;
+
+    # perform map ligand
+    my $mapped = $refgeom->copy();
+    $mapped->map_ligand($ligand);
+
+    # Printing
+    # prints to STDOUT if $outfile == ''
+    unless ( $opt{force} ) {
+        $opt{output} = _utils::handle_overwrite( $opt{output} );
+    }
+    _utils::mkdirsfor( $opt{output} ) if $opt{output};
+    print("Saving mapped ligand to $opt{output}\n") if $opt{output};
+    $mapped->printXYZ( $opt{output}, '', 1 );
+
+    return 0;
+}
+
+# read in options
+my %opt;
+GetOptions( 'help|h'     => \$opt{help},
+            'ligand|l=s' => \$opt{ligand},
+            'force|f'    => \$opt{force},
+            'output|o=s' => \$opt{output} )
+  or pod2usage(
+    { -exitval => 1,
+      -verbose => 1
+    } );
+pod2usage(0) if $opt{help};
+
+pod2usage(
+    { -message => "Please provide a reference geometry",
+      -exitval => 1,
+      -verbose => 1
+    } ) unless ( $ARGV[0] );
+pod2usage(
+    { -message => "Please provide a ligand geometry",
+      -exitval => 1,
+      -verbose => 1
+    } ) unless ( $opt{ligand} );
+
+&main( $ARGV[0], %opt );
+
+=pod
+
+=head1 SYNOPSIS
+
+map_ligand [options] reference_structure -l target_ligand
+
+=head1 OPTIONS
+
+=over
+
+=item B<-l target_ligand>, B<--ligand target_ligand>
+
+Specify ligands to map to reference structure.
+Must be an Aaron ligand xyz file.
+Use libadd_ligand to add new ligands to your personal library.
+
+=item B<-o FILENAME [-f]>, B<--output FILENAME [--force]>
+
+Save new geometry to FILENAME instead of printing to STDOUT.
+Optionally, force overwrite if file already exists.
+
+=item B<-h>, B<--help>
+
+Print this help message and exit
+
+=back
+
+=cut
+
