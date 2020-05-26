@@ -65,7 +65,8 @@ sub findJob {
 
 		#Grab jobIDs for all jobs matching $Path
 		foreach my $job (@jobs) {
-			if ($job =~ m/<Job_Id>(\d+).+<job_state>[QR].+PBS_O_WORKDIR=[^,<>]*$Path/) {
+		#Look for jobs that are queued, running, or suspended
+			if ($job =~ m/<Job_Id>(\d+).+<job_state>[QRS].+PBS_O_WORKDIR=[^,<>]*$Path/) {
 				push(@jobIDs, $1);
 			}
 		}
