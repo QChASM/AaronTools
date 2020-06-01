@@ -316,9 +316,9 @@ sub gradient {
         my @gradient = map { "$ref->{$_}->{value}/$ref->{$_}->{converged}" }
                             keys %{ $ref };
 
-        $gradient = join(", ", @gradient);
+        $gradient = join("  ", @gradient);
 
-        $gradient = $gradient ? "Progress: $gradient" : "Progress: Not found";
+        $gradient = $gradient ? "$gradient" : "Not found";
     }
 
     return $gradient;
