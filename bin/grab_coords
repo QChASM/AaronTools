@@ -55,7 +55,7 @@ pod2usage(
 
 =head1 SYNOPSIS
 
-grab_coords [options] filename(s)
+grab_coords [options] file1 [file2 file3]
 
 =head1 OPTIONS
 
