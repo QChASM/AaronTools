@@ -23,10 +23,10 @@ sub main {
         _utils::mkdirsfor( $opt{output} );
         open( OFILE, ">", $opt{output} )
           || die "$0: can't open $opt{output} for writing: $!\n";
-        my $header = sprintf( "%s,%s,%s,%s\n", "Max Force", "RMS Force", "Max Disp", "RMS Disp" );
+        my $header = sprintf( "%s,%s,%s,%s,%s\n", "Filename", "Max Force", "RMS Force", "Max Disp", "RMS Disp" );
         print( OFILE $header );
     } else {
-        printf( "%30s   %s    %s     %s     %s\n", "Filename", "Max Force", "RMS Force", "Max Disp", "RMS Disp" );
+        printf( "%30s    %s     %s     %s      %s\n", "Filename", "Max Force", "RMS Force", "Max Disp", "RMS Disp" );
     }
 
     for my $file (@files) {
@@ -41,8 +41,10 @@ sub main {
         };
         my $gradient = $out->gradient();
         if ( $opt{output} ) {
-            printf ( OFILE "%30s\t%s\n", $file,$gradient);
+            $gradient =~ s/\s+/,/g;
+            printf ( OFILE "%s,%s\n", $file,$gradient);
         } else {
+            $gradient =~ s/NO/NO /g;
             printf ("%30s\t%s\n", $file,$gradient);
         }
     }
