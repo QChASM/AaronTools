@@ -12,7 +12,10 @@ require _utils;
 sub main {
     my %opt  = %{ shift(@_) };
     my @files = @_;
+    my $overwrite = 1;
 
+    $opt{output} = _utils::handle_overwrite( $opt{output} ) unless $opt{force};
+    _utils::mkdirsfor( $opt{output} ) if $opt{output};
     for my $file (@files) {
         my $geo = new AaronTools::Geometry();
     
@@ -21,13 +24,12 @@ sub main {
         $geo->read_geometry($file)
           or die("File may be damaged, cannot read geometry\n");
     
-        $opt{output} = _utils::handle_overwrite( $opt{output} ) unless $opt{force};
-        _utils::mkdirsfor( $opt{output} ) if $opt{output};
         if($opt{comment}) {
-            $geo->printXYZ( $opt{output}, $opt{comment}, 1 );
+            $geo->printXYZ( $opt{output}, $opt{comment}, $overwrite );
         } else {
-            $geo->printXYZ( $opt{output}, $geo->{name}, 1 );
+            $geo->printXYZ( $opt{output}, $geo->{name}, $overwrite );
         }
+        $overwrite = 0;
     }
 
     return 0;
@@ -56,6 +58,8 @@ pod2usage(
 =head1 SYNOPSIS
 
 grab_coords [options] file1 [file2 file3]
+
+Retrieves final set of coordinates from XYZ, Gaussian log files, PDB files, etc.
 
 =head1 OPTIONS
 
