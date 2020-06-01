@@ -1,0 +1,97 @@
+#!/usr/bin/env perl
+
+use strict;
+use lib $ENV{'QCHASM'};
+
+use Getopt::Long;
+use Pod::Usage;
+use AaronTools::G09Out;
+use Data::Dumper;
+
+unshift @INC, ("$ENV{'QCHASM'}/AaronTools/bin");
+require _utils;
+
+sub main {
+    my $opt   = shift;
+    my %opt   = %$opt;
+    my @files = @_;
+
+    if ( $opt{output} ) {
+        unless ( $opt{force} ) {
+            $opt{output} = _utils::handle_overwrite( $opt{output} );
+        }
+        _utils::mkdirsfor( $opt{output} );
+        open( OFILE, ">", $opt{output} )
+          || die "$0: can't open $opt{output} for writing: $!\n";
+        my $header = sprintf( "%s,%s,%s,%s\n", "Max Force", "RMS Force", "Max Disp", "RMS Disp" );
+        print( OFILE $header );
+    } else {
+        printf( "%30s   %s    %s     %s     %s\n", "Filename", "Max Force", "RMS Force", "Max Disp", "RMS Disp" );
+    }
+
+    for my $file (@files) {
+        my $out = '';
+        eval {
+            local $@;
+            $out = new AaronTools::G09Out( 'file' => $file );
+            1;
+        } or do {
+            print {*STDERR} ("Issue reading log file: $@\nSkipping $file...\n");
+            next;
+        };
+        my $gradient = $out->gradient();
+        if ( $opt{output} ) {
+            printf ( OFILE "%30s\t%s\n", $file,$gradient);
+        } else {
+            printf ("%30s\t%s\n", $file,$gradient);
+        }
+    }
+    if ( $opt{output} ) {
+        close(OFILE) || die "couldn't close $opt{output}: $!";
+    }
+}
+
+my %opt;
+$opt{help}   = '';
+$opt{output} = '';
+GetOptions( 'help|h'     => \$opt{help},
+            'force|f'    => \$opt{force},
+            'output|o=s' => \$opt{output} )
+  or pod2usage(
+    { -exitval => 1,
+      -verbose => 1
+    } );
+pod2usage(0) if $opt{help};
+pod2usage(
+    { -message => "Please specify a filename\n",
+      -exitval => 1,
+      -verbose => 1
+    } ) if @ARGV < 1;
+
+&main( \%opt, @ARGV );
+
+=pod
+
+=head1 SYNOPSIS
+
+grab_status [options] file1 [file2 file3]
+
+Prints Max/RMS gradient and displacement from Gaussian geometry optimization along with convergence status
+
+=head1 OPTIONS
+
+=over
+
+=item B<-h>, B<--help>
+
+Print this help message and exit
+
+=item B<-o FILENAME [-f]>, B<--output FILENAME [--force]>
+
+Write output to FILENAME (in csv format).
+Optionally, force overwrite if file already exists.
+
+=back
+
+=cut
+
