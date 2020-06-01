@@ -1,4 +1,5 @@
 #!/usr/bin/env perl
+#
 
 use strict;
 use lib $ENV{'QCHASM'};
@@ -11,24 +12,18 @@ require _utils;
 
 sub main {
     my %opt  = %{ shift(@_) };
-    my @files = @_;
+    my $file = shift;
 
-    for my $file (@files) {
-        my $geo = new AaronTools::Geometry();
-    
-        $geo->{name} = $file;
-    
-        $geo->read_geometry($file)
-          or die("File may be damaged, cannot read geometry\n");
-    
-        $opt{output} = _utils::handle_overwrite( $opt{output} ) unless $opt{force};
-        _utils::mkdirsfor( $opt{output} ) if $opt{output};
-        if($opt{comment}) {
-            $geo->printXYZ( $opt{output}, $opt{comment}, 1 );
-        } else {
-            $geo->printXYZ( $opt{output}, $geo->{name}, 1 );
-        }
-    }
+    my $geo = new AaronTools::Geometry();
+
+    $geo->{name} = $file;
+
+    $geo->read_geometry($file)
+      or die("File may be damaged, cannot read geometry\n");
+
+    $opt{output} = _utils::handle_overwrite( $opt{output} ) unless $opt{force};
+    _utils::mkdirsfor( $opt{output} ) if $opt{output};
+    $geo->printXYZ( $opt{output}, $opt{comment}, 1 );
 
     return 0;
 }
@@ -55,7 +50,7 @@ pod2usage(
 
 =head1 SYNOPSIS
 
-grab_coords [options] filename(s)
+grab_coords [options] filename
 
 =head1 OPTIONS
 
