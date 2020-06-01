@@ -40,12 +40,20 @@ sub main {
             next;
         };
         my $gradient = $out->gradient();
+        my $message;
+        if($out->finished_normal()) {
+            $message = "Normal termination";
+        } else {
+            my $error = $out->error_msg();
+            $error =~ s/Unknown message//;
+            $message = "$error";
+        }
         if ( $opt{output} ) {
             $gradient =~ s/\s+/,/g;
-            printf ( OFILE "%s,%s\n", $file,$gradient);
+            printf ( OFILE "%s,%s,%s\n", $file,$gradient,$message);
         } else {
             $gradient =~ s/NO/NO /g;
-            printf ("%30s\t%s\n", $file,$gradient);
+            printf ("%30s\t%s %s\n", $file,$gradient,$message);
         }
     }
     if ( $opt{output} ) {

@@ -318,7 +318,7 @@ sub gradient {
 
         $gradient = join("  ", @gradient);
 
-        $gradient = $gradient ? "$gradient" : "Not found";
+        $gradient = $gradient ? "$gradient" : "No gradient information found";
     }
 
     return $gradient;
