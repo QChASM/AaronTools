@@ -16,6 +16,8 @@ sub main {
     my %opt   = %$opt;
     my @files = @_;
 
+    my $header = sprintf( "%s,%s,%s,%s,%s\n", qw(E H G G(quasi-RRHO) FileName) );
+
     if ( $opt{output} ) {
         unless ( $opt{force} ) {
             $opt{output} = _utils::handle_overwrite( $opt{output} );
@@ -24,8 +26,9 @@ sub main {
         open( OFILE, ">", $opt{output} )
           || die "$0: can't open $opt{output} for writing: $!\n";
 
-        my $header = sprintf( "%s,%s,%s,%s,%s\n", qw(E H G G(quasi-RRHO) FileName) );
         print( OFILE $header );
+    } elsif ( $opt{csv} ) {
+        print( $header );
     }
 
     for my $file (@files) {
@@ -52,6 +55,8 @@ sub main {
 
         if ( $opt{output} ) {
             print( OFILE "$energy,$enthalpy,$free_energy,$grimmeG,$file\n" );
+        } elsif ( $opt{csv} ) {
+            print( "$energy,$enthalpy,$free_energy,$grimmeG,$file\n" );
         } else {
             print("*** $file ***\n") if $#ARGV > 0;
             printf( "E             = %.6f\n",   $energy );
@@ -70,6 +75,7 @@ $opt{help}   = '';
 $opt{output} = '';
 GetOptions( 'help|h'     => \$opt{help},
             'force|f'    => \$opt{force},
+            'csv|c'    => \$opt{csv},
             'output|o=s' => \$opt{output} )
   or pod2usage(
     { -exitval => 1,
@@ -102,6 +108,10 @@ Print this help message and exit
 
 Write output to FILENAME (in csv format).
 Optionally, force overwrite if file already exists.
+
+=item B<-csv>
+
+Write CSV format to STDOUT
 
 =back
 

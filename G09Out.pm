@@ -362,7 +362,7 @@ sub Grimme_G {
     my $v0 = 100;           #cutoff for quasi rrho
 
     if (!$self->frequency()) {
-        print {*STDERR} "Cannot calculate the Grimme free energy without vibrational frequencies\n";
+        print {*STDERR} "Cannot calculate the quasi-RRHO free energy without vibrational frequencies\n";
     }
     my @rottemps = @{$self->{rotational_temperature}};
     
