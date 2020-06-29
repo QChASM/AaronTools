@@ -155,6 +155,10 @@ pod2usage(
 
 dihedral [options] filename
 
+=head2 SYNOPSIS
+
+print or change the dihedral angle of the specified atoms
+
 =head1 OPTIONS
 
 =over

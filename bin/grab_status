@@ -86,6 +86,8 @@ pod2usage(
 
 grab_status [options] file1 [file2 file3]
 
+=head2 SYNOPSIS
+
 Prints Max/RMS gradient and displacement from Gaussian geometry optimization along with convergence status
 
 =head1 OPTIONS

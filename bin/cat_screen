@@ -225,6 +225,10 @@ if ( $opt{available} ) {
 
 cat_screen [options] [-l|s target=sub ...] file
 
+=head2 SYNOPSIS
+
+generates catalyst structures with changes to the ligand and/or substrate
+
 =head1 OPTIONS
 
 =over

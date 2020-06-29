@@ -119,6 +119,10 @@ pod2usage(
 
 libadd_substituent [-n name] -t target -a avoid -c nconf rotangle filename
 
+=head2 SYNOPSIS
+
+add a substituent to your personal substituent library
+
 =head1 OPTIONS
 
 =over

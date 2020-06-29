@@ -122,6 +122,10 @@ rotate [options] -x x|y|z -a angle [-n repeat] file
 
 rotate [options] -x x|y|z -n rotations file
 
+=head2 SYNOPSIS
+
+rotate the strucure about the specified axis
+
 =head1 OPTIONS
 
 =over

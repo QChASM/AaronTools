@@ -94,6 +94,10 @@ pod2usage(
 
 libadd_ligand [-f] -n name file
 
+=head2 SYNOPSIS
+
+add a ligand to your ligand personal library
+
 =head1 OPTIONS
 
 =over

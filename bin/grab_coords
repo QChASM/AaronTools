@@ -59,7 +59,9 @@ pod2usage(
 
 grab_coords [options] file1 [file2 file3]
 
-Retrieves final set of coordinates from XYZ, Gaussian log files, PDB files, etc.
+=head2 SYNOPSIS
+
+Retrieves final set of coordinates from XYZ, Gaussian output files (.log), Gaussian input files (.com), or PDB files.
 
 =head1 OPTIONS
 

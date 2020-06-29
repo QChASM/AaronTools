@@ -131,6 +131,10 @@ pod2usage(
 
 cat_substitute [options] [-l|s target=sub ...] file
 
+=head2 SYNOPSIS
+
+modify substituents on the ligand or substrate of a catalyst while keeping the substrate atoms all at the start of the structure and the ligand atoms at the end of the structure
+
 =head1 OPTIONS
 
 =over

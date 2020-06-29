@@ -105,6 +105,10 @@ pod2usage(
 
 substitute [options] -s atom1=sub1 [atom2=sub2 ...] file [file2 ...]
 
+=head2 SYNOPSIS
+
+modify substituents on the input structure
+
 =head1 OPTIONS
 
 =over

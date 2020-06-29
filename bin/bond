@@ -146,6 +146,10 @@ pod2usage(
 
 bond [options] filename
 
+=head2 SYNOPSIS
+
+print or change the distance between specified atoms
+
 =head1 OPTIONS
 
 =over

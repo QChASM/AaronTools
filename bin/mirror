@@ -67,6 +67,10 @@ pod2usage(
 
 mirror [options] file
 
+=head2 SYNOPSIS
+
+mirror structure across the specified plane
+
 =head1 OPTIONS
 
 =over

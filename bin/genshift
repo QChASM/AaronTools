@@ -108,6 +108,10 @@ foreach my $t ( @{ $opt{targets} } ) {
 
 genshift [options] -v (x y z | a) file
 
+=head2 SYNOPSIS
+
+translate all or part of a structure by a specified vector or a specified atom or bond to the origin
+
 =head1 OPTIONS
 
 =over

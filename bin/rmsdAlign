@@ -132,6 +132,10 @@ if ($targetatoms) {
 
 rmsd_align [options] reference_geom to_align_geom
 
+=head2
+
+align structure to minimize the RMSD from the reference structrure
+
 =head1 OPTIONS
 
 =over

@@ -68,6 +68,10 @@ pod2usage(
 
 angle [options] -a atom1 atom2 atom3 filename
 
+=head2 SYNOPSIS
+
+print the angle between the specified atoms
+
 =head1 OPTIONS
 
 =over

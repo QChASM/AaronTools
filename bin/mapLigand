@@ -68,6 +68,10 @@ pod2usage(
 
 map_ligand [options] reference_structure -l target_ligand
 
+=head2 SYNOPSIS
+
+swap the ligand on a catalyst for another
+
 =head1 OPTIONS
 
 =over

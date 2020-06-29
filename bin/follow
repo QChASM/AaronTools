@@ -135,6 +135,11 @@ pod2usage(
 
 follow [options] filename
 
+=head2 SYNOPSIS
+
+move the structure along one of the normal modes
+filename should be a Gaussian output file for a frequency job
+
 =head1 OPTIONS
 
 =over

@@ -197,6 +197,10 @@ genrotate [options] -v (x y z | a1 a2 | a sub_name) -a angle [-n repeat] file
 
 genrotate [options] -v (x y z | a1 a2 | a sub_name) -n rotations file
 
+=head2 SYNOPSIS
+
+rotate all or part of a structure about a specified vector or bond
+
 =head1 OPTIONS
 
 =over

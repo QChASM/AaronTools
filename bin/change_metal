@@ -58,6 +58,10 @@ pod2usage(
 
 change_metal [options] -m TM file.xyz
 
+=head2 SYNOPSIS
+
+change the transition metal of a catalyst to a different element
+
 =head1 OPTIONS
 
 =over

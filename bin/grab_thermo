@@ -101,6 +101,10 @@ pod2usage(
 
 grab_thermo [options] file1 [file2 file3]
 
+=head2 SYNOPSIS
+
+print thermochemistry information (E, H(RRHO), G(RRHO), and G(Quasi-RRHO) for w_0 = 100/cm) given a frequency job output file
+
 =head1 OPTIONS
 
 =over
