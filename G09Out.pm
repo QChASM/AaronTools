@@ -74,7 +74,7 @@ sub new {
 
     while (<INFILE>) {
         my $line = $_;
-        /(Standard|Input) orientation:/  && do  {
+        / orientation:/  && do  {
             @coords = ();
             @atoms = ();
             $line = <INFILE>;
