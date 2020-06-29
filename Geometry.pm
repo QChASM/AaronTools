@@ -440,14 +440,14 @@ sub examine_connectivity {
 
     my %params = @_;
 
-    my ($file, $thres) = ($params{file}, $params{thres});
+    my ($file, $thres, $ignore_hbonds) = ($params{file}, $params{thres}, $params{ignore_hbonds});
 
     $self->refresh_connected();
 
     my $geo_ref = new AaronTools::Geometry();
     $geo_ref->read_geometry($file);
 
-    my ($broken, $formed) = $self->compare_connectivity(geo_ref=>$geo_ref, thres=>$thres);
+    my ($broken, $formed) = $self->compare_connectivity(geo_ref=>$geo_ref, thres=>$thres, ignore_hbonds=>$ignore_hbonds);
 
     $broken = [map {[split('-', $_)]} keys %{$broken}];
     $formed = [map {[split('-', $_)]} keys %{$formed}];
@@ -460,10 +460,12 @@ sub compare_connectivity {
 
     my %params = @_;
 
-    my ($geo_ref, $thres) = ($params{geo_ref}, $params{thres});
+    my ($geo_ref, $thres, $ignore_hbonds) = ($params{geo_ref}, $params{thres}, $params{ignore_hbonds});
 
     if ($#{ $self->{connection} } != $#{ $geo_ref->{connection} }) {
         warn "Number of atoms are not equal for $self->{name}";
+        $self->printXYZ;
+        $geo_ref->printXYZ;
     }
 
     my %broken;
@@ -484,6 +486,37 @@ sub compare_connectivity {
          my @formed_atoms = grep { !$con2{$_} &&
             (abs($self->distance(atom1=>$atom, atom2=>$_) -
                 $geo_ref->distance(atom1=>$atom, atom2=>$_)) > $thres)} keys %con1;
+         
+         if ($ignore_hbonds) {
+             my @del_broken;
+             while (my ($i, $broken_atom) = each @broken_atoms) {
+                 if (($self->{elements}->[$atom] eq 'H' and $self->{elements}->[$broken_atom] =~ /[NOF]/) 
+                     or
+                     ($self->{elements}->[$atom] =~ /[NOF]/ and $self->{elements}->[$broken_atom] eq 'H')) {
+                         #print "ignoring broken bond between $atom and $broken_atom because it's probably an H bond\n";
+                         push @del_broken, $i;
+                 }
+             }
+
+             for my $ignored_atom (@del_broken) {
+                 delete $broken_atoms[$ignored_atom];
+             }
+
+             my @del_formed;
+             while (my ($i, $formed_atom) = each @formed_atoms) {
+                 if (($self->{elements}->[$atom] eq 'H' and $self->{elements}->[$formed_atom] =~ /[NOF]/) 
+                     or
+                     ($self->{elements}->[$atom] =~ /[NOF]/ and $self->{elements}->[$formed_atom] eq 'H')) {
+                         #print "ignoring formed bond between $atom and $formed_atom because it's probably an H bond\n";
+                         push @del_formed, $i;
+                 }
+             }
+             
+             for my $ignored_atom (@del_formed) {
+                 delete $formed_atoms[$ignored_atom];
+             }
+
+         }
 
          my @broken_bonds = map { join('-', sort($atom, $_)) } @broken_atoms;
          my @formed_bonds = map { join('-', sort($atom, $_)) } @formed_atoms;
