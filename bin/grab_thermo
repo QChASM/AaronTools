@@ -29,6 +29,8 @@ sub main {
         print( OFILE $header );
     } elsif ( $opt{csv} ) {
         print( $header );
+    } elsif ( $opt{tab} ) {
+        sprintf( "%s\t%s\t%s\t%s\t%s\n", qw(E H G G(quasi-RRHO) FileName) );
     }
 
     for my $file (@files) {
@@ -57,6 +59,8 @@ sub main {
             print( OFILE "$energy,$enthalpy,$free_energy,$grimmeG,$file\n" );
         } elsif ( $opt{csv} ) {
             print( "$energy,$enthalpy,$free_energy,$grimmeG,$file\n" );
+        } elsif ( $opt{tab} ) {
+            print( "$energy\t$enthalpy\t$free_energy\t$grimmeG\t$file\n" );
         } else {
             print("*** $file ***\n") if $#ARGV > 0;
             printf( "E             = %.6f\n",   $energy );
@@ -76,6 +80,7 @@ $opt{output} = '';
 GetOptions( 'help|h'     => \$opt{help},
             'force|f'    => \$opt{force},
             'csv|c'    => \$opt{csv},
+            'tab|t'    => \$opt{tab},
             'output|o=s' => \$opt{output} )
   or pod2usage(
     { -exitval => 1,
@@ -112,6 +117,10 @@ Optionally, force overwrite if file already exists.
 =item B<-csv>
 
 Write CSV format to STDOUT
+
+=item B<-tab>
+
+Write tab-separed output to STDOUT
 
 =back
 
