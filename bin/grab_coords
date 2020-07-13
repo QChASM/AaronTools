@@ -27,7 +27,7 @@ sub main {
         if($opt{comment}) {
             $geo->printXYZ( $opt{output}, $opt{comment}, $overwrite );
         } else {
-            $geo->printXYZ( $opt{output}, "", $overwrite );
+            $geo->printXYZ( $opt{output}, "$file", $overwrite );
         }
         $overwrite = 0;
     }
