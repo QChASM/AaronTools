@@ -33,7 +33,7 @@ sub grab_coords {
       while (<INFILE>) {
 		$count++;
         my $line=$_;
-        if($line =~ / orientation:/) {
+        if($line =~ /(Standard|Input) orientation:/) {
           @coords = ();
           @atoms = ();
 		  @flags = ();
