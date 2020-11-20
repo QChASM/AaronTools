@@ -8,4 +8,4 @@ Documentation on installing and using AaronTools is <a href="https://github.com/
 A Python implementation of AaronTools is also <a href="https://github.com/QChASM/AaronTools.py">available here.</a>
 The Python version of AatonTools has far more features, so is strongly recommended.
 
-If you have any questions, feel free to contact us at catalysttrends@uga.edu
+If you have any questions, feel free to contact us at qchasm@uga.edu
