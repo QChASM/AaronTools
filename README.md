@@ -6,7 +6,7 @@ These tools can be used either directly within a Perl script using AaronTools ob
 A Python implementation of AaronTools is <a href="https://github.com/QChASM/AaronTools.py">available here.</a>
 The Python version of AatonTools has far more features, so is <em>strongly recommended</em>.
 
-This Perl version of AaronTools will continue to be updated only for major bug fixes but is no longer being actively developed.
+This Perl version of AaronTools is no longer being actively developed.
 
 Documentation on installing and using AaronTools is <a href="https://github.com/QChASM/AaronTools/wiki">available here.</a>
 
